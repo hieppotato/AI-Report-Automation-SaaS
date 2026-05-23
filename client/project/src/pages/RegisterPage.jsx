@@ -1,21 +1,24 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
-import { AuthLayout } from '@/components/layout/AuthLayout'
-import { supabase } from '@/lib/supabase'
+import { AuthLayout } from '../components/layout/AuthLayout'
+import { supabase } from '../lib/supabase'
+import { useUIStore } from '../store/uiStore'
 
 const schema = z.object({
+  fullName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Enter a valid email'),
-  password: z.string().min(1, 'Password is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
-export function LoginPage() {
+export function RegisterPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
+  const { addToast } = useUIStore()
 
   const {
     register,
@@ -25,19 +28,26 @@ export function LoginPage() {
 
   const onSubmit = async (data) => {
     setServerError('')
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
+      options: {
+        data: {
+          full_name: data.fullName,
+        },
+      },
     })
+    
     if (error) {
       setServerError(error.message)
     } else {
-      navigate('/dashboard')
+      addToast('Registration successful! Please check your email.', 'success')
+      navigate('/login')
     }
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Sign in to your Reportly account">
+    <AuthLayout title="Create your account" subtitle="Get started with Reportly today">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {serverError && (
           <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
@@ -47,7 +57,20 @@ export function LoginPage() {
         )}
 
         <div>
-          <label className="label">Email</label>
+          <label className="label">Full Name</label>
+          <input
+            type="text"
+            placeholder="John Doe"
+            className="input"
+            {...register('fullName')}
+          />
+          {errors.fullName && (
+            <p className="mt-1 text-xs text-red-500">{errors.fullName.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="label">Email Address</label>
           <input
             type="email"
             placeholder="you@company.com"
@@ -61,27 +84,19 @@ export function LoginPage() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="label mb-0">Password</label>
-            <Link
-              to="/forgot-password"
-              className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
+          <label className="label">Password</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               className="input pr-10"
-              autoComplete="current-password"
+              autoComplete="new-password"
               {...register('password')}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -96,16 +111,17 @@ export function LoginPage() {
           disabled={isSubmitting}
           className="btn-primary w-full h-10 mt-2"
         >
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
+          {isSubmitting ? 'Creating account…' : 'Create account'}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-        Don't have an account?{' '}
-        <Link to="/register" className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
-          Create account
+        Already have an account?{' '}
+        <Link to="/login" className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
+          Sign in
         </Link>
       </p>
     </AuthLayout>
   )
 }
+export default RegisterPage
