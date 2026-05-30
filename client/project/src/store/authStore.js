@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { normalizeProfile } from '../lib/normalizers'
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -12,15 +13,14 @@ export const useAuthStore = create((set) => ({
     set({
       session,
       user,
-      profile: user ? {
-        id: user.id,
-        email: user.email,
-        fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-        avatarUrl: user.user_metadata?.avatar_url || null,
-      } : null,
+      profile: user ? normalizeProfile(null, user) : null,
       loading: false,
     })
   },
+
+  setProfile: (profile) => set((state) => ({
+    profile: normalizeProfile(profile, state.user),
+  })),
   
   updateProfile: (updates) => {
     set((state) => ({
@@ -29,10 +29,14 @@ export const useAuthStore = create((set) => ({
   },
 
   setLoading: (loading) => set({ loading }),
+
+  clearAuth: () => {
+    localStorage.removeItem('active_org_id')
+    set({ user: null, session: null, profile: null, loading: false })
+  },
   
   signOut: async () => {
     await supabase.auth.signOut()
-    localStorage.removeItem('active_org_id')
-    set({ user: null, session: null, profile: null, loading: false })
+    useAuthStore.getState().clearAuth()
   },
 }))

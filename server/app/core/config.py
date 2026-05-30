@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = Field(None, alias="SUPABASE_JWT_SECRET")
     jwt_secret: str | None = Field(None, alias="JWT_SECRET")
     supabase_jwt_audience: str = Field("authenticated", alias="SUPABASE_JWT_AUDIENCE")
+    supabase_storage_bucket: str = Field("raw-csv", alias="SUPABASE_STORAGE_BUCKET")
+    google_gemini_api_key: str | None = Field(None, alias="GOOGLE_GEMINI_API_KEY")
+    google_gemini_model: str = Field("gemini-2.5-flash-20240606", alias="GOOGLE_GEMINI_MODEL")
 
     backend_cors_origins: str | list[str] = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",

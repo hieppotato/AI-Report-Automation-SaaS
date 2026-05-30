@@ -11,9 +11,13 @@ import {
 } from 'lucide-react'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useUIStore } from '../store/uiStore'
+import { useOrgStore } from '../store/orgStore'
+import { uploadFileToStorage, useCreateUploadMetadata } from '../hooks/useUpload'
 
 export function UploadPage() {
   const { addToast } = useUIStore()
+  const activeOrg = useOrgStore((state) => state.activeOrg)
+  const createUploadMetadata = useCreateUploadMetadata()
   const [file, setFile] = useState(null)
   const [isDragActive, setIsDragActive] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -68,23 +72,38 @@ export function UploadPage() {
     }
   }
 
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = async () => {
     if (!file) return
+    if (!activeOrg?.id) {
+      addToast('Select a workspace before uploading.', 'error')
+      return
+    }
 
     setUploadState('uploading')
     setUploadProgress(0)
 
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setUploadState('success')
-          addToast(`Report file "${file.name}" ingested successfully!`, 'success')
-          return 100
-        }
-        return prev + 10
+    try {
+      const { filePath } = await uploadFileToStorage({
+        organizationId: activeOrg.id,
+        file: file.raw,
+        onProgress: setUploadProgress,
       })
-    }, 1500 / 10) // 1.5 seconds simulation
+
+      await createUploadMetadata.mutateAsync({
+        file_name: file.raw.name,
+        file_path: filePath,
+        mime_type: file.raw.type || null,
+        size_bytes: file.raw.size,
+        status: 'uploaded',
+      })
+
+      setUploadProgress(100)
+      setUploadState('success')
+      addToast(`Report file "${file.name}" uploaded successfully.`, 'success')
+    } catch (error) {
+      setUploadState('error')
+      addToast(error.message, 'error')
+    }
   }
 
   const handleClear = () => {
@@ -193,6 +212,18 @@ export function UploadPage() {
                       <p className="font-semibold text-xs text-emerald-800 dark:text-emerald-400">Processing complete!</p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
                         Your file has been indexed. AI has generated anomaly metrics diagnostics correctly.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {uploadState === 'error' && (
+                  <div className="flex items-center gap-3 p-4 rounded-xl border border-red-200 dark:border-red-950/20 bg-red-50/10 dark:bg-red-950/5 text-left text-sm text-red-800 dark:text-red-400">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold text-xs">Upload failed</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+                        Check Supabase Storage bucket permissions and try again.
                       </p>
                     </div>
                   </div>

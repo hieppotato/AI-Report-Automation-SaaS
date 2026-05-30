@@ -21,3 +21,10 @@ def first_or_none(rows: list[dict[str, Any]] | None) -> dict[str, Any] | None:
     if not rows:
         return None
     return rows[0]
+
+
+def response_count(response: Any) -> int:
+    count = getattr(response, "count", None)
+    if count is None:
+        return len(getattr(response, "data", None) or [])
+    return int(count)

@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import { useOrgStore } from '../../store/orgStore'
+import { getProfile } from '../../api/profile'
+import { listOrganizations } from '../../api/organizations'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,38 +17,41 @@ const queryClient = new QueryClient({
 })
 
 export const AppProviders = ({ children }) => {
-  const { setSession, loading } = useAuthStore()
-  const { setOrganizations } = useOrgStore()
+  const { setSession, setProfile, loading } = useAuthStore()
+  const { setOrganizations, clearOrganizations, setLoading: setOrgLoading } = useOrgStore()
 
   useEffect(() => {
-    // Check initial active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const hydrateBackendState = async (session) => {
       setSession(session)
-      if (session) {
-        // Load default workspaces to populate organization context.
-        const defaultWorkspaces = [
-          { id: 'org_1', name: 'Acme Corp', slug: 'acme-corp', plan: 'Pro' },
-          { id: 'org_2', name: 'Stark Enterprises', slug: 'stark-enterprises', plan: 'Enterprise' }
-        ]
-        setOrganizations(defaultWorkspaces)
+      if (!session) {
+        clearOrganizations()
+        return
       }
-    })
 
-    // Listen to changes in auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (session) {
-        const defaultWorkspaces = [
-          { id: 'org_1', name: 'Acme Corp', slug: 'acme-corp', plan: 'Pro' },
-          { id: 'org_2', name: 'Stark Enterprises', slug: 'stark-enterprises', plan: 'Enterprise' }
-        ]
-        setOrganizations(defaultWorkspaces)
-      } else {
+      setOrgLoading(true)
+      try {
+        const [profile, organizations] = await Promise.all([
+          getProfile(),
+          listOrganizations(),
+        ])
+        setProfile(profile)
+        setOrganizations(organizations)
+      } catch (error) {
+        console.error('Failed to hydrate backend state:', error)
         setOrganizations([])
+      } finally {
+        setOrgLoading(false)
       }
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      hydrateBackendState(session)
     })
 
-    // Setup initial system theme
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      hydrateBackendState(session)
+    })
+
     const savedTheme = localStorage.getItem('theme') || 'dark'
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark')
@@ -57,7 +62,7 @@ export const AppProviders = ({ children }) => {
     return () => {
       subscription.unsubscribe()
     }
-  }, [setSession, setOrganizations])
+  }, [setSession, setProfile, setOrganizations, clearOrganizations, setOrgLoading])
 
   if (loading) {
     return (

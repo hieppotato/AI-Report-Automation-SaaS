@@ -79,10 +79,10 @@ export function BillingPage() {
               <CreditCard className="w-4 h-4 text-zinc-400" />
               Monthly Reports Quota
             </span>
-            <span className="font-mono text-zinc-500 dark:text-zinc-400">12 / 100 reports ingested</span>
+            <span className="font-mono text-zinc-500 dark:text-zinc-400">11 / 100 reports ingested</span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
-            <div className="h-full rounded-full bg-brand-600" style={{ width: '12%' }} />
+            <div className="h-full rounded-full bg-brand-600" style={{ width: '11%' }} />
           </div>
           <p className="mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
             Resets on June 1, 2026. Free plans receive 3 maximum.

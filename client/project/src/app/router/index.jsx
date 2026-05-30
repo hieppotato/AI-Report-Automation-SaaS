@@ -1,5 +1,5 @@
 import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useOrgStore } from '../../store/orgStore'
 
@@ -10,8 +10,9 @@ import { ForgotPasswordPage } from '../../pages/ForgotPasswordPage'
 
 // Protected Page imports
 import { DashboardPage } from '../../pages/DashboardPage'
-import { ReportsPage } from '../../pages/ReportsPage'
-import { ReportDetailPage } from '../../pages/ReportDetailPage'
+import { ReportsPage } from '../../pages/reports/ReportsPage'
+import { CreateReportPage } from '../../pages/reports/CreateReportPage'
+import { ReportDetailsPage } from '../../pages/reports/ReportDetailsPage'
 import { UploadPage } from '../../pages/UploadPage'
 import { OrgSettingsPage } from '../../pages/OrgSettingsPage'
 import { MembersPage } from '../../pages/MembersPage'
@@ -21,17 +22,22 @@ import { OnboardingPage } from '../../pages/OnboardingPage'
 
 // Force authorization and workspace tenants
 function ProtectedRoute({ children }) {
-  const { session, loading } = useAuthStore()
-  const { organizations } = useOrgStore()
+  const location = useLocation()
+  const { session, loading: authLoading } = useAuthStore()
+  const { organizations, loading: orgLoading } = useOrgStore()
 
-  if (loading) return null
+  if (authLoading || orgLoading) return null
 
   if (!session) {
     return <Navigate to="/login" replace />
   }
 
   const hasOrgs = organizations && organizations.length > 0
-  const isOnboardingRoute = window.location.pathname === '/onboarding'
+  const isOnboardingRoute = location.pathname === '/onboarding'
+
+  if (hasOrgs && isOnboardingRoute) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   if (!hasOrgs && !isOnboardingRoute) {
     return <Navigate to="/onboarding" replace />
@@ -42,7 +48,10 @@ function ProtectedRoute({ children }) {
 
 // Intercept logged in accounts attempting public screens
 function PublicRoute({ children }) {
-  const { session } = useAuthStore()
+  const { session, loading: authLoading } = useAuthStore()
+  const { loading: orgLoading } = useOrgStore()
+
+  if (authLoading || orgLoading) return null
 
   if (session) {
     return <Navigate to="/dashboard" replace />
@@ -105,10 +114,18 @@ export function AppRouter() {
         }
       />
       <Route
+        path="/reports/create"
+        element={
+          <ProtectedRoute>
+            <CreateReportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/reports/:id"
         element={
           <ProtectedRoute>
-            <ReportDetailPage />
+            <ReportDetailsPage />
           </ProtectedRoute>
         }
       />

@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { AuthLayout } from '../components/layout/AuthLayout'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
 import { useUIStore } from '../store/uiStore'
 
 const schema = z.object({
@@ -19,6 +19,7 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
   const { addToast } = useUIStore()
+  const { register: registerAccount } = useAuth()
 
   const {
     register,
@@ -28,21 +29,12 @@ export function RegisterPage() {
 
   const onSubmit = async (data) => {
     setServerError('')
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          full_name: data.fullName,
-        },
-      },
-    })
-    
-    if (error) {
-      setServerError(error.message)
-    } else {
-      addToast('Registration successful! Please check your email.', 'success')
+    try {
+      await registerAccount(data)
+      addToast('Registration successful. Please check your email.', 'success')
       navigate('/login')
+    } catch (error) {
+      setServerError(error.message)
     }
   }
 
@@ -58,29 +50,14 @@ export function RegisterPage() {
 
         <div>
           <label className="label">Full Name</label>
-          <input
-            type="text"
-            placeholder="John Doe"
-            className="input"
-            {...register('fullName')}
-          />
-          {errors.fullName && (
-            <p className="mt-1 text-xs text-red-500">{errors.fullName.message}</p>
-          )}
+          <input type="text" placeholder="John Doe" className="input" {...register('fullName')} />
+          {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName.message}</p>}
         </div>
 
         <div>
           <label className="label">Email Address</label>
-          <input
-            type="email"
-            placeholder="you@company.com"
-            className="input"
-            autoComplete="email"
-            {...register('email')}
-          />
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
-          )}
+          <input type="email" placeholder="you@company.com" className="input" autoComplete="email" {...register('email')} />
+          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         <div>
@@ -101,17 +78,11 @@ export function RegisterPage() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {errors.password && (
-            <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
-          )}
+          {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="btn-primary w-full h-10 mt-2"
-        >
-          {isSubmitting ? 'Creating account…' : 'Create account'}
+        <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-10 mt-2">
+          {isSubmitting ? 'Creating account...' : 'Create account'}
         </button>
       </form>
 
@@ -124,4 +95,5 @@ export function RegisterPage() {
     </AuthLayout>
   )
 }
+
 export default RegisterPage

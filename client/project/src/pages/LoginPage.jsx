@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
-import { AuthLayout } from '@/components/layout/AuthLayout'
-import { supabase } from '@/lib/supabase'
+import { AuthLayout } from '../components/layout/AuthLayout'
+import { useAuth } from '../hooks/useAuth'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -16,6 +16,7 @@ export function LoginPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
+  const { login } = useAuth()
 
   const {
     register,
@@ -25,14 +26,11 @@ export function LoginPage() {
 
   const onSubmit = async (data) => {
     setServerError('')
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
-    if (error) {
-      setServerError(error.message)
-    } else {
+    try {
+      await login(data)
       navigate('/dashboard')
+    } catch (error) {
+      setServerError(error.message)
     }
   }
 
@@ -41,32 +39,21 @@ export function LoginPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {serverError && (
           <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 shrink-0" />
             {serverError}
           </div>
         )}
 
         <div>
           <label className="label">Email</label>
-          <input
-            type="email"
-            placeholder="you@company.com"
-            className="input"
-            autoComplete="email"
-            {...register('email')}
-          />
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
-          )}
+          <input type="email" placeholder="you@company.com" className="input" autoComplete="email" {...register('email')} />
+          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="label mb-0">Password</label>
-            <Link
-              to="/forgot-password"
-              className="text-xs text-brand-600 dark:text-brand-400 hover:underline"
-            >
+            <Link to="/forgot-password" className="text-xs text-brand-600 dark:text-brand-400 hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -86,17 +73,11 @@ export function LoginPage() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {errors.password && (
-            <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
-          )}
+          {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="btn-primary w-full h-10 mt-2"
-        >
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
+        <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-10 mt-2">
+          {isSubmitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, organizations, reports
+from app.api.routes import auth, organizations, profile, reports, uploads
 from app.core.config import settings
 from app.middleware.error_handler import register_exception_handlers
 
@@ -30,8 +30,10 @@ def create_app() -> FastAPI:
         return {"status": "ok", "environment": settings.app_env}
 
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+    app.include_router(profile.router, prefix="/api/profile", tags=["profile"])
     app.include_router(organizations.router, prefix="/api/organizations", tags=["organizations"])
     app.include_router(reports.router, prefix="/api/organizations", tags=["reports"])
+    app.include_router(uploads.router, prefix="/api/organizations", tags=["uploads"])
 
     return app
 

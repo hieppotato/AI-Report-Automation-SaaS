@@ -5,13 +5,24 @@ from fastapi.responses import JSONResponse
 from app.core.exceptions import AppError
 
 
+def _http_error_code(status_code: int) -> str:
+    return {
+        status.HTTP_401_UNAUTHORIZED: "unauthorized",
+        status.HTTP_403_FORBIDDEN: "forbidden",
+        status.HTTP_404_NOT_FOUND: "not_found",
+        status.HTTP_409_CONFLICT: "conflict",
+        status.HTTP_422_UNPROCESSABLE_ENTITY: "validation_error",
+        status.HTTP_500_INTERNAL_SERVER_ERROR: "internal_server_error",
+    }.get(status_code, "request_error")
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(HTTPException)
     async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
         message = exc.detail if isinstance(exc.detail, str) else "Request failed."
         return JSONResponse(
             status_code=exc.status_code,
-            content={"error": {"message": message, "status_code": exc.status_code}},
+            content={"error": {"code": _http_error_code(exc.status_code), "message": message}},
             headers=getattr(exc, "headers", None),
         )
 
@@ -19,7 +30,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
-            content={"error": {"message": exc.message, "status_code": exc.status_code}},
+            content={"error": {"code": exc.code, "message": exc.message}},
         )
 
     @app.exception_handler(RequestValidationError)
@@ -28,9 +39,16 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content={
                 "error": {
+                    "code": "validation_error",
                     "message": "Request validation failed.",
-                    "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
                     "details": exc.errors(),
                 }
             },
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_error_handler(_: Request, exc: Exception) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": {"code": "internal_server_error", "message": "Internal server error."}},
         )

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 OrganizationRole = Literal["owner", "admin", "member"]
 
@@ -24,8 +24,25 @@ class OrganizationResponse(BaseModel):
 
 
 class AddOrganizationMemberRequest(BaseModel):
-    user_id: UUID
+    user_id: UUID | None = None
+    email: str | None = Field(default=None, max_length=320)
     role: OrganizationRole = "member"
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        return normalized or None
+
+    @model_validator(mode="after")
+    def require_user_id_or_email(self) -> "AddOrganizationMemberRequest":
+        if not self.user_id and not self.email:
+            raise ValueError("Either user_id or email is required.")
+        if self.email and "@" not in self.email:
+            raise ValueError("Enter a valid email address.")
+        return self
 
 
 class OrganizationMemberUpdate(BaseModel):
