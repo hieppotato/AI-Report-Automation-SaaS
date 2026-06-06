@@ -21,6 +21,7 @@ class StorageService:
     def __init__(self, supabase: Client) -> None:
         self.supabase = supabase
         self.bucket = settings.supabase_storage_bucket
+        self.generated_bucket = settings.generated_reports_bucket
 
     async def upload_report_file(self, organization_id: UUID, report_id: UUID, file: UploadFile) -> dict:
         file_name = file.filename or "upload"
@@ -63,15 +64,28 @@ class StorageService:
             return data.read()
         return bytes(data)
 
-    def create_signed_url(self, file_path: str, expires_in: int = 3600) -> str:
+    def upload_generated_report(self, organization_id: UUID, report_id: UUID, file_name: str, content: bytes, content_type: str) -> dict:
+        safe_name = "".join(char if char.isalnum() or char in "._-" else "_" for char in file_name)
+        file_path = f"{organization_id}/reports/{report_id}/exports/{safe_name}"
         try:
-            response = self.supabase.storage.from_(self.bucket).create_signed_url(file_path, expires_in)
+            self.supabase.storage.from_(self.generated_bucket).upload(
+                file_path,
+                content,
+                {"content-type": content_type, "upsert": "true"},
+            )
+        except Exception as exc:
+            raise RepositoryError("Failed to upload generated report.") from exc
+        return {"file_path": file_path, "bucket": self.generated_bucket}
+
+    def create_signed_url(self, file_path: str, expires_in: int = 3600, bucket: str | None = None) -> str:
+        try:
+            response = self.supabase.storage.from_(bucket or self.bucket).create_signed_url(file_path, expires_in)
         except Exception as exc:
             raise RepositoryError("Failed to create file signed URL.") from exc
         return response.get("signedURL") or response.get("signed_url") or ""
 
-    def delete_file(self, file_path: str) -> None:
+    def delete_file(self, file_path: str, bucket: str | None = None) -> None:
         try:
-            self.supabase.storage.from_(self.bucket).remove([file_path])
+            self.supabase.storage.from_(bucket or self.bucket).remove([file_path])
         except Exception as exc:
             raise RepositoryError("Failed to delete file from Supabase Storage.") from exc

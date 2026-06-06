@@ -8,11 +8,14 @@ from supabase import Client
 from app.core.exceptions import NotFoundError, PermissionDeniedError
 from app.core.security import current_user_from_token, extract_bearer_token
 from app.core.supabase import get_supabase_admin
+from app.repositories.billing_repo import BillingRepository
 from app.repositories.organization_repo import OrganizationRepository
 from app.repositories.profile_repo import ProfileRepository
 from app.repositories.report_repo import ReportRepository
 from app.repositories.upload_repo import UploadRepository
 from app.schemas.auth import CurrentUser, OrganizationContext
+from app.services.billing_service import BillingService
+from app.services.export_service import ExportService
 from app.services.organization_service import OrganizationService
 from app.services.profile_service import ProfileService
 from app.services.report_service import ReportService
@@ -60,6 +63,12 @@ def get_upload_repository(
     return UploadRepository(supabase)
 
 
+def get_billing_repository(
+    supabase: Client = Depends(get_supabase_admin),
+) -> BillingRepository:
+    return BillingRepository(supabase)
+
+
 def get_organization_service(
     repo: OrganizationRepository = Depends(get_organization_repository),
 ) -> OrganizationService:
@@ -88,6 +97,20 @@ def get_storage_service(
     supabase: Client = Depends(get_supabase_admin),
 ) -> StorageService:
     return StorageService(supabase)
+
+
+def get_export_service(
+    report_repo: ReportRepository = Depends(get_report_repository),
+    storage_service: StorageService = Depends(get_storage_service),
+) -> ExportService:
+    return ExportService(report_repo, storage_service)
+
+
+def get_billing_service(
+    billing_repo: BillingRepository = Depends(get_billing_repository),
+    organization_repo: OrganizationRepository = Depends(get_organization_repository),
+) -> BillingService:
+    return BillingService(billing_repo, organization_repo)
 
 
 def require_org_member(

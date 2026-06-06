@@ -31,3 +31,15 @@ export function getReportStatus(organizationId, reportId) {
 export function uploadReportFile(organizationId, reportId, formData, config = {}) {
   return api.post(`/api/organizations/${organizationId}/reports/${reportId}/upload`, formData, config)
 }
+
+export function exportReportPDF(organizationId, reportId) {
+  return api.get(`/api/organizations/${organizationId}/reports/${reportId}/export/pdf`)
+}
+
+export function exportReportDOCX(organizationId, reportId) {
+  return api.get(`/api/organizations/${organizationId}/reports/${reportId}/export/docx`)
+}
+
+export function deleteExport(organizationId, reportId, exportIndex) {
+  return api.delete(`/api/organizations/${organizationId}/reports/${reportId}/export/${exportIndex}`)
+}

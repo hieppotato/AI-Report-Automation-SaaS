@@ -1,12 +1,33 @@
 import React from 'react'
-import { Check, CreditCard, Sparkles, Zap } from 'lucide-react'
+import { Check, CreditCard, Sparkles, Zap, Loader2, HelpCircle } from 'lucide-react'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
+import { useBilling } from '../hooks/useBilling'
+import { useReports } from '../hooks/useReports'
+import { useMembers } from '../hooks/useMembers'
 import { useOrgStore } from '../store/orgStore'
-import { useUIStore } from '../store/uiStore'
 
 export function BillingPage() {
-  const { activeOrg, setActiveOrg } = useOrgStore()
-  const { addToast } = useUIStore()
+  const activeOrg = useOrgStore((state) => state.activeOrg)
+  const { plan: apiPlan, isLoading: planLoading, upgradeToPro, isUpgrading } = useBilling()
+  const { data: reportsResult } = useReports()
+  const { data: membersResult } = useMembers()
+
+  const reportCount = reportsResult?.items?.length || 0
+  const memberCount = membersResult?.items?.length || 0
+
+  // Standardize plan active state from API or store fallback
+  const activePlanName = (apiPlan?.plan || activeOrg?.plan || 'free').toLowerCase()
+  const isPro = activePlanName === 'pro'
+
+  const handleUpgrade = async (planName) => {
+    if (planName === 'pro') {
+      try {
+        await upgradeToPro()
+      } catch (err) {
+        // handled in hook
+      }
+    }
+  }
 
   const plans = [
     {
@@ -14,13 +35,13 @@ export function BillingPage() {
       price: '$0',
       description: 'Ideal for basic solo analyst workflows.',
       features: [
-        '3 Processed reports per month',
+        '3 Processed reports limit',
         'Basic CSV upload ingestion',
         'Standard SVG trend sparklines',
-        '1 Member seat',
+        '1 Member seat maximum',
       ],
       cta: 'Current Plan',
-      current: activeOrg?.plan === 'Free' || !activeOrg?.plan,
+      current: !isPro,
     },
     {
       name: 'Pro',
@@ -31,61 +52,49 @@ export function BillingPage() {
         'Advanced CSV & Excel support',
         'AI anomaly diagnostics engine',
         '5 Member seats included',
-        'Stripe billing support',
+        'Stripe billing integration',
       ],
-      cta: 'Upgrade to Pro',
-      current: activeOrg?.plan === 'Pro',
-    },
-    {
-      name: 'Enterprise',
-      price: '$199',
-      description: 'Custom scaled controls for large companies.',
-      features: [
-        'Unlimited processed reports',
-        'Dedicated custom AI model tuning',
-        'Dedicated SLA & 24/7 client care',
-        'Unlimited workspace members',
-        'Advanced security & single sign-on',
-      ],
-      cta: 'Contact Sales',
-      current: activeOrg?.plan === 'Enterprise',
+      cta: 'Upgrade Now',
+      current: isPro,
     },
   ]
 
-  const handleUpgrade = (planName) => {
-    if (planName === 'Enterprise') {
-      addToast('Connecting you with our sales representative...', 'info')
-      return
-    }
-    
-    if (activeOrg) {
-      const updatedOrg = { ...activeOrg, plan: planName }
-      setActiveOrg(updatedOrg)
-      addToast(`Workspace upgraded to ${planName} Plan successfully!`, 'success')
-    }
-  }
+  const comparisons = [
+    { feature: 'Monthly Ingest Limit', free: '3 reports', pro: '100 reports' },
+    { feature: 'File Formats', free: 'CSV only', pro: 'CSV, XLSX, XLS, PDF' },
+    { feature: 'AI Diagnostics', free: 'No', pro: 'Yes, full suite' },
+    { feature: 'Seat Allowance', free: '1 member', pro: '5 members' },
+    { feature: 'Support Tier', free: 'Community', pro: 'Priority Email' },
+    { feature: 'Stripe Billing', free: 'No', pro: 'Yes' },
+  ]
 
   return (
     <DashboardLayout>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">Billing & Subscriptions</h1>
-        <p className="text-sm text-zinc-500 mt-1">Govern subscription metrics, track ingestion quotas, and upgrade plans.</p>
+        <p className="text-sm text-zinc-500 mt-1">Govern subscription metrics, track usage quotas, and manage plan tiers.</p>
       </div>
 
+      {/* Usage Quotas Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="card">
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
               <CreditCard className="w-4 h-4 text-zinc-400" />
-              Monthly Reports Quota
+              Monthly Ingestion Quota
             </span>
-            <span className="font-mono text-zinc-500 dark:text-zinc-400">11 / 100 reports ingested</span>
+            <span className="font-mono text-zinc-500 dark:text-zinc-450">
+              {reportCount} / {isPro ? 100 : 3} reports used
+            </span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
-            <div className="h-full rounded-full bg-brand-600" style={{ width: '11%' }} />
+            <div 
+              className="h-full rounded-full bg-brand-650 transition-all duration-500" 
+              style={{ width: `${Math.min(100, (reportCount / (isPro ? 100 : 3)) * 100)}%` }} 
+            />
           </div>
           <p className="mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            Resets on June 1, 2026. Free plans receive 3 maximum.
+            {isPro ? 'Pro plan allows up to 100 generated reports.' : 'Upgrade to Pro to expand limit to 100 monthly reports.'}
           </p>
         </div>
 
@@ -95,24 +104,30 @@ export function BillingPage() {
               <Zap className="w-4 h-4 text-zinc-400" />
               Workspace Seat Quota
             </span>
-            <span className="font-mono text-zinc-500 dark:text-zinc-400">3 / 5 seats utilized</span>
+            <span className="font-mono text-zinc-500 dark:text-zinc-450">
+              {memberCount} / {isPro ? 5 : 1} seats utilized
+            </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-zinc-150 dark:bg-zinc-900 overflow-hidden mt-3">
-            <div className="h-full rounded-full bg-brand-600" style={{ width: '60%' }} />
+          <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
+            <div 
+              className="h-full rounded-full bg-brand-650 transition-all duration-500" 
+              style={{ width: `${Math.min(100, (memberCount / (isPro ? 5 : 1)) * 100)}%` }} 
+            />
           </div>
           <p className="mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            Upgrades to Enterprise remove workspace seat constraints.
+            {isPro ? 'Pro plan includes up to 5 team seats.' : 'Free plan limits workspace access to 1 seat.'}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Pricing Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         {plans.map((plan) => (
           <div
             key={plan.name}
             className={`card relative overflow-hidden flex flex-col justify-between ${
               plan.current
-                ? 'border-brand-500 dark:border-brand-600 shadow-md ring-1 ring-brand-500'
+                ? 'border-brand-500 dark:border-brand-600 shadow-md ring-1 ring-brand-500 bg-brand-50/5 dark:bg-brand-950/5'
                 : 'border-zinc-200 dark:border-zinc-800'
             }`}
           >
@@ -144,21 +159,61 @@ export function BillingPage() {
 
             <div className="pt-6 mt-6 border-t border-zinc-100 dark:border-zinc-900">
               <button
-                onClick={() => handleUpgrade(plan.name)}
-                disabled={plan.current}
+                onClick={() => handleUpgrade(plan.name.toLowerCase())}
+                disabled={plan.current || isUpgrading}
                 className={
                   plan.current
-                    ? 'btn-secondary w-full h-10 select-none bg-zinc-50 dark:bg-zinc-900/60 font-semibold cursor-not-allowed'
-                    : 'btn-primary w-full h-10 cursor-pointer'
+                    ? 'btn-secondary w-full h-10 select-none bg-zinc-50 dark:bg-zinc-900/60 font-semibold cursor-not-allowed text-xs'
+                    : 'btn-primary w-full h-10 cursor-pointer text-xs justify-center gap-2'
                 }
               >
-                {plan.current ? 'Active Plan' : plan.cta}
+                {isUpgrading && plan.name === 'Pro' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating Checkout...
+                  </>
+                ) : plan.current ? (
+                  'Active Plan'
+                ) : (
+                  plan.cta
+                )}
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Pricing Comparison Table */}
+      <div className="card p-0 overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10">
+          <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2">
+            <HelpCircle className="w-4 h-4 text-zinc-400" />
+            Pricing & Plan Comparison
+          </h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50/20 dark:bg-zinc-900/5">
+                <th className="py-3 px-6">Feature Details</th>
+                <th className="py-3 px-6">Free Plan</th>
+                <th className="py-3 px-6">Pro Plan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 leading-relaxed text-zinc-650 dark:text-zinc-350">
+              {comparisons.map((row, idx) => (
+                <tr key={idx} className="hover:bg-zinc-50/30 dark:hover:bg-zinc-900/5 transition-colors">
+                  <td className="py-3.5 px-6 font-medium text-zinc-800 dark:text-zinc-200">{row.feature}</td>
+                  <td className="py-3.5 px-6">{row.free}</td>
+                  <td className="py-3.5 px-6 font-semibold text-brand-600 dark:text-brand-400">{row.pro}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </DashboardLayout>
   )
 }
+
 export default BillingPage

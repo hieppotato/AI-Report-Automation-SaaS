@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Trash2, Code, Clipboard, Check, Sparkles, UploadCloud, Download, AlertTriangle, AlertOctagon, FileText, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Trash2, Code, Clipboard, Check, Sparkles, UploadCloud, Download, AlertTriangle, AlertOctagon, FileText, CheckCircle2, TrendingUp, Zap, Loader2 } from 'lucide-react'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
 import { ReportStatusBadge } from '../../components/reports/ReportStatusBadge'
 import { ReportSummaryCard } from '../../components/reports/ReportSummaryCard'
@@ -12,16 +12,42 @@ import { ErrorState } from '../../components/reports/ErrorState'
 import { FileUploadCard } from '../../components/reports/FileUploadCard'
 import { UploadProgress } from '../../components/reports/UploadProgress'
 import { ProcessingTimeline } from '../../components/reports/ProcessingTimeline'
+import { ExportHistory } from '../../components/reports/ExportHistory'
 import { useReportDetails } from '../../hooks/useReportDetails'
 import { useReports } from '../../hooks/useReports'
 import { useReportStatus } from '../../hooks/useReportStatus'
 import { useUploadReport } from '../../hooks/useUploadReport'
+import { useExportReport } from '../../hooks/useExportReport'
 import { useUIStore } from '../../store/uiStore'
+import { useDeleteExport } from '../../hooks/useDeleteExport'
 
 function asNumber(value) {
   const number = Number(value)
   return Number.isFinite(number) ? number : 0
 }
+
+function normalizeListSection(value) {
+  if (!value) return []
+  if (Array.isArray(value)) {
+    return value.map((item) => {
+      if (typeof item === 'object' && item !== null) {
+        return {
+          title: item.title || item.name || '',
+          description: item.description || item.summary || item.text || JSON.stringify(item),
+        }
+      }
+      return { title: '', description: String(item) }
+    })
+  }
+  if (typeof value === 'object') {
+    return Object.entries(value).map(([key, val]) => ({
+      title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      description: typeof val === 'object' ? JSON.stringify(val) : String(val)
+    }))
+  }
+  return [{ title: '', description: String(value) }]
+}
+
 
 function getReportJson(report) {
   if (!report?.report_json) return {}
@@ -140,6 +166,7 @@ export function ReportDetailsPage() {
   const { statusData, status, progress, errorMessage } = useReportStatus(id)
   const { uploadFile, isUploading, error: uploadError } = useUploadReport()
   const { deleteReport } = useReports()
+  const { mutateAsync: removeExport } = useDeleteExport()
 
   useEffect(() => {
     if (statusData?.status === 'completed') {
@@ -162,11 +189,50 @@ export function ReportDetailsPage() {
   }, [activeStatus, prevStatus, addToast])
 
   const [retryMode, setRetryMode] = useState(false)
+  const { mutateAsync: exportReport, isPending: isExporting } = useExportReport()
+  const [exportFormat, setExportFormat] = useState(null)
+
+  const handleExportTrigger = async (format) => {
+      setExportFormat(format)
+      try {
+        const data = await exportReport({ reportId: id, format })
+        return data
+      } catch (err) {
+        // handled globally
+      } finally {
+        setExportFormat(null)
+      }
+    }
+
+    const handleDeleteExport = async (
+    exportIndex
+  ) => {
+    const confirmed = window.confirm(
+      'Delete this exported file?'
+    )
+
+    if (!confirmed) return
+
+    await removeExport({
+      organizationId: report.organization_id,
+      reportId: report.id,
+      exportIndex,
+    })
+
+    await refetch()
+  }
 
   const reportJson = useMemo(() => getReportJson(report), [report])
   const metrics = useMemo(() => buildMetrics(report, reportJson), [report, reportJson])
   const insights = useMemo(() => buildInsights(report, reportJson), [report, reportJson])
   const chartData = useMemo(() => buildChartData(report, reportJson), [report, reportJson])
+
+  const executiveSummary = reportJson?.executive_summary || reportJson?.summary || ''
+  const keyTrends = useMemo(() => normalizeListSection(reportJson?.key_trends), [reportJson?.key_trends])
+  const risks = useMemo(() => normalizeListSection(reportJson?.risks), [reportJson?.risks])
+  const opportunities = useMemo(() => normalizeListSection(reportJson?.opportunities), [reportJson?.opportunities])
+  const recommendations = useMemo(() => normalizeListSection(reportJson?.recommendations), [reportJson?.recommendations])
+
 
   const anomaliesList = useMemo(() => {
     if (!report?.anomalies) return []
@@ -357,6 +423,55 @@ export function ReportDetailsPage() {
                     )}
                   </div>
                 )}
+
+                {/* Phase 1: Export Document Section */}
+                {activeStatus === 'completed' && (
+                  <div className="card space-y-4">
+                    <div className="flex items-center gap-2 pb-1.5 border-b border-zinc-100 dark:border-zinc-900">
+                      <Download className="w-4 h-4 text-brand-600" />
+                      <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">Export Report Document</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+                      Compile and download a professional summary of this report in PDF or Microsoft Word format.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        disabled={isExporting}
+                        onClick={() => handleExportTrigger('pdf')}
+                        className="btn-primary h-9 flex-1 gap-2 cursor-pointer text-xs justify-center"
+                      >
+                        {isExporting && exportFormat === 'pdf' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <FileText className="w-4 h-4" />
+                        )}
+                        {isExporting && exportFormat === 'pdf' ? 'Exporting PDF...' : 'Export PDF'}
+                      </button>
+                      <button
+                        disabled={isExporting}
+                        onClick={() => handleExportTrigger('docx')}
+                        className="btn-secondary h-9 flex-1 gap-2 cursor-pointer text-xs justify-center"
+                      >
+                        {isExporting && exportFormat === 'docx' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <FileText className="w-4 h-4" />
+                        )}
+                        {isExporting && exportFormat === 'docx' ? 'Exporting DOCX...' : 'Export DOCX'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Phase 5: Export History List */}
+                {activeStatus === 'completed' && (
+                  <ExportHistory
+                    exports={report?.report_json?.exports || []}
+                    onExport={handleExportTrigger}
+                    onDelete={handleDeleteExport}
+                    isExporting={isExporting}
+                  />
+                )}
               </>
             )}
           </div>
@@ -378,29 +493,95 @@ export function ReportDetailsPage() {
           <MetricsGrid metrics={metrics} />
         </div>
 
-        <div>
-          <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-brand-500" />
-            AI Analytical Recommendations
-          </h3>
-          {insights.length ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-              {insights.map((ins, idx) => (
-                <InsightCard
-                  key={`${ins.type}-${idx}`}
-                  type={ins.type}
-                  title={ins.title}
-                  description={ins.description}
-                  impact={ins.impact}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="card py-8 text-center text-xs text-zinc-500 dark:text-zinc-400">
-              Insights will appear here after the report is completed.
-            </div>
-          )}
-        </div>
+        {/* Phase 2: Premium Executive Summary Sections */}
+        {activeStatus === 'completed' && (
+          <div className="space-y-8">
+            {executiveSummary && (
+              <div className="card border-l-4 border-l-brand-600 dark:border-l-brand-500 bg-brand-50/5 dark:bg-brand-950/5 p-6">
+                <h3 className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-2.5">Executive Summary</h3>
+                <p className="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
+                  {executiveSummary}
+                </p>
+              </div>
+            )}
+
+            {keyTrends.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 text-blue-500" />
+                  Key Trends
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {keyTrends.map((item, idx) => (
+                    <InsightCard
+                      key={`trend-${idx}`}
+                      type="trend"
+                      title={item.title || "Market Trend"}
+                      description={item.description}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {risks.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                  <AlertOctagon className="w-4 h-4 text-rose-500" />
+                  Risks & Vulnerabilities
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {risks.map((item, idx) => (
+                    <InsightCard
+                      key={`risk-${idx}`}
+                      type="risk"
+                      title={item.title || "Identified Risk"}
+                      description={item.description}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {opportunities.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-emerald-500" />
+                  Growth Opportunities
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {opportunities.map((item, idx) => (
+                    <InsightCard
+                      key={`opportunity-${idx}`}
+                      type="anomaly"
+                      title={item.title || "Strategic Opportunity"}
+                      description={item.description}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {recommendations.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-brand-500" />
+                  Actionable Recommendations
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {recommendations.map((item, idx) => (
+                    <InsightCard
+                      key={`recommendation-${idx}`}
+                      type="recommendation"
+                      title={item.title || "AI Action Step"}
+                      description={item.description}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">

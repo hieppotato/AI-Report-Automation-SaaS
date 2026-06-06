@@ -38,15 +38,14 @@ class AIPipelineService:
             logger.info("Pipeline parsed file - report=%s text_length=%d", report_id, len(text))
 
             self._set_progress(organization_id, report_id, "processing", 50, "Generating summary")
-            summary = self.summarize_content(text)
-            logger.info("Pipeline generated summary - report=%s", report_id)
+            report_json = self.generate_report_json(text)
+            logger.info("Pipeline generated structured report JSON - report=%s", report_id)
 
             self._set_progress(organization_id, report_id, "processing", 70, "Detecting anomalies")
-            insights = self.generate_insights(text)
-            logger.info("Pipeline generated insights - report=%s", report_id)
+            insights = self._legacy_insights(report_json)
+            logger.info("Pipeline normalized insights - report=%s", report_id)
 
             self._set_progress(organization_id, report_id, "processing", 90, "Building charts")
-            report_json = self.generate_report_json(text, summary, insights)
             metrics = self._extract_metrics(report_json)
             logger.info("Pipeline built report JSON - report=%s", report_id)
 
@@ -59,7 +58,7 @@ class AIPipelineService:
                     "current_step": "Completed",
                     "report_json": report_json,
                     "insights": report_json.get("insights", insights),
-                    "anomalies": report_json.get("insights", {}).get("anomalies", insights.get("anomalies", [])),
+                    "anomalies": report_json.get("anomalies", insights.get("anomalies", [])),
                     "charts": report_json.get("charts", []),
                     "total_revenue": metrics.get("total_revenue"),
                     "total_orders": metrics.get("total_orders"),
@@ -101,7 +100,57 @@ class AIPipelineService:
             "recommendations": self._as_string_list(parsed.get("recommendations")),
         }
 
-    def generate_report_json(self, text: str, summary: str, insights: dict[str, list[str]]) -> dict[str, Any]:
+    def generate_report_json(
+        self,
+        text: str,
+        summary: str | None = None,
+        insights: dict[str, list[str]] | None = None,
+    ) -> dict[str, Any]:
+        prompt = (
+            "Return valid JSON only. Do not wrap it in markdown. "
+            "The object must contain executive_summary, key_trends, risks, opportunities, "
+            "recommendations, insights, anomalies, charts, metrics. "
+            "All list fields must be arrays. metrics must be an array of objects with key and numeric value "
+            "for total_revenue, total_orders, aov, repeat_rate when available. "
+            "charts must be an array of simple chart specs with title, type, labels, values."
+        )
+        source_payload = {"source": text[:60_000]}
+        if summary:
+            source_payload["summary"] = summary
+        if insights:
+            source_payload["insights"] = insights
+        parsed = self._call_gemini_json(prompt, json.dumps(source_payload))
+        parsed.setdefault("executive_summary", summary or parsed.get("summary") or "")
+        parsed.setdefault("key_trends", [])
+        parsed.setdefault("risks", [])
+        parsed.setdefault("opportunities", [])
+        parsed.setdefault("recommendations", [])
+        parsed.setdefault("insights", [])
+        parsed.setdefault("anomalies", [])
+        parsed.setdefault("charts", [])
+        parsed.setdefault("metrics", [])
+        parsed["summary"] = parsed.get("summary") or parsed.get("executive_summary") or ""
+        return parsed
+
+    def _call_gemini_json(self, system_prompt: str, text: str) -> dict[str, Any]:
+        last_error: Exception | None = None
+        last_raw = ""
+        for attempt in range(2):
+            try:
+                raw = self._call_gemini(system_prompt, text)
+                last_raw = raw
+                parsed = self._parse_json(raw)
+                if parsed:
+                    if attempt:
+                        logger.info("Gemini JSON recovered after retry")
+                    return parsed
+                last_error = ValueError("Gemini returned invalid JSON.")
+            except Exception as exc:
+                last_error = exc
+                logger.warning("Gemini call failed - attempt=%s error=%s", attempt + 1, exc)
+        raise RuntimeError(f"Gemini failed to produce valid JSON: {last_error or last_raw[:200]}")
+
+    def _legacy_generate_report_json(self, text: str, summary: str, insights: dict[str, list[str]]) -> dict[str, Any]:
         raw = self._call_gemini(
             (
                 "Return JSON only with keys summary, insights, metrics, charts. "
@@ -144,10 +193,20 @@ class AIPipelineService:
         if cleaned.startswith("```"):
             cleaned = cleaned.strip("`")
             cleaned = cleaned.removeprefix("json").strip()
+        if "{" in cleaned and "}" in cleaned:
+            cleaned = cleaned[cleaned.find("{") : cleaned.rfind("}") + 1]
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
             return {}
+
+    def _legacy_insights(self, report_json: dict[str, Any]) -> dict[str, list[str]]:
+        return {
+            "trends": self._as_string_list(report_json.get("key_trends")),
+            "anomalies": self._as_string_list(report_json.get("anomalies")),
+            "risks": self._as_string_list(report_json.get("risks")),
+            "recommendations": self._as_string_list(report_json.get("recommendations")),
+        }
 
     def _as_string_list(self, value: Any) -> list[str]:
         if isinstance(value, list):
