@@ -1,6 +1,7 @@
 import json
+import hashlib
+import hmac
 from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import pytest
@@ -60,20 +61,21 @@ class FakeExportService:
 
 
 class FakeBillingRouteService:
-    def create_checkout_session(self, organization_id: UUID, user_id: UUID):
-        return {"checkout_url": "https://checkout.stripe.test/session", "session_id": "cs_test_123"}
+    def create_checkout_for_user(self, organization_id: UUID, user_id: UUID, user_email: str | None):
+        return {"checkout_url": "https://checkout.lemonsqueezy.test/session"}
 
-    def current_plan(self, organization_id: UUID, user_id: UUID):
+    def get_current_plan_for_user(self, organization_id: UUID, user_id: UUID):
         return {
             "organization_id": organization_id,
             "plan": "free",
-            "subscription_status": None,
-            "current_period_end": None,
+            "status": None,
+            "renewal_at": None,
+            "provider": "lemonsqueezy",
         }
 
-    def handle_webhook(self, payload: bytes, signature: str | None):
+    def process_webhook(self, payload: bytes, signature: str | None):
         if signature != "valid":
-            raise AppError("Invalid Stripe webhook signature.", status_code=400, code="invalid_webhook_signature")
+            raise AppError("Invalid LemonSqueezy webhook signature.", status_code=400, code="invalid_webhook_signature")
         return {"received": True}
 
 
@@ -103,6 +105,14 @@ class FakeOrganizationRepo:
 
     def get_membership(self, organization_id: UUID, user_id: UUID):
         return {"organization_id": str(organization_id), "user_id": str(user_id), "role": self.role}
+
+
+class FakeHttpResponse:
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> dict:
+        return {"data": {"attributes": {"url": "https://checkout.lemonsqueezy.test/real"}}}
 
 
 class DummyReportRepo:
@@ -174,20 +184,100 @@ def test_billing_current_plan_defaults_to_free() -> None:
     response = client.get(f"/api/billing/current-plan?organization_id={ORG_ID}")
     assert response.status_code == 200
     assert response.json()["plan"] == "free"
+    assert response.json()["provider"] == "lemonsqueezy"
+
+
+def test_checkout_creation_returns_lemonsqueezy_url() -> None:
+    setup_route_overrides(role="admin")
+    client = TestClient(app)
+    response = client.post("/api/billing/create-checkout", json={"organization_id": str(ORG_ID)})
+    assert response.status_code == 200
+    assert response.json() == {"checkout_url": "https://checkout.lemonsqueezy.test/session"}
 
 
 def test_billing_webhook_rejects_invalid_signature() -> None:
     setup_route_overrides()
     client = TestClient(app)
-    response = client.post("/api/billing/webhook", content=b"{}", headers={"Stripe-Signature": "invalid"})
+    response = client.post("/api/billing/webhook", content=b"{}", headers={"X-Signature": "invalid"})
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "invalid_webhook_signature"
 
 
-def test_member_cannot_create_checkout_session() -> None:
+def test_member_cannot_create_checkout() -> None:
     service = BillingService(FakeBillingRepo(), FakeOrganizationRepo(role="member"))
     with pytest.raises(PermissionDeniedError):
-        service.create_checkout_session(ORG_ID, USER_ID)
+        service.create_checkout_for_user(ORG_ID, USER_ID, "member@example.com")
+
+
+def test_admin_checkout_creation_calls_lemonsqueezy(monkeypatch) -> None:
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_api_key", "test-key", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_store_id", "1", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_variant_id", "2", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_webhook_secret", "secret", raising=False)
+    captured = {}
+
+    def fake_post(url, headers, json, timeout):
+        captured["url"] = url
+        captured["headers"] = headers
+        captured["json"] = json
+        captured["timeout"] = timeout
+        return FakeHttpResponse()
+
+    monkeypatch.setattr("app.services.billing_service.httpx.post", fake_post)
+    service = BillingService(FakeBillingRepo(), FakeOrganizationRepo(role="admin"))
+    response = service.create_checkout_for_user(ORG_ID, USER_ID, "admin@example.com")
+    assert response.checkout_url == "https://checkout.lemonsqueezy.test/real"
+    assert captured["url"] == "https://api.lemonsqueezy.com/v1/checkouts"
+    assert captured["json"]["data"]["relationships"]["variant"]["data"]["id"] == "2"
+    assert captured["json"]["data"]["attributes"]["checkout_data"]["custom"]["organization_id"] == str(ORG_ID)
+
+
+def test_lemonsqueezy_webhook_updates_plan(monkeypatch) -> None:
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_api_key", "test-key", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_store_id", "1", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_variant_id", "2", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_webhook_secret", "secret", raising=False)
+    repo = FakeBillingRepo()
+    service = BillingService(repo, FakeOrganizationRepo(role="owner"))
+    payload = json.dumps(
+        {
+            "meta": {"event_name": "subscription_created", "custom_data": {"organization_id": str(ORG_ID)}},
+            "data": {
+                "id": "sub_123",
+                "attributes": {
+                    "status": "active",
+                    "renews_at": "2026-07-01T00:00:00Z",
+                    "customer_id": 123,
+                    "variant_id": 456,
+                },
+            },
+        }
+    ).encode("utf-8")
+    signature = hmac.new(b"secret", payload, hashlib.sha256).hexdigest()
+    result = service.process_webhook(payload, signature)
+    assert result == {"received": True}
+    assert repo.updated_plan == "pro"
+    assert repo.subscription["provider"] == "lemonsqueezy"
+    assert repo.subscription["renewal_at"] == "2026-07-01T00:00:00Z"
+
+
+def test_lemonsqueezy_cancelled_webhook_sets_free(monkeypatch) -> None:
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_api_key", "test-key", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_store_id", "1", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_variant_id", "2", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_webhook_secret", "secret", raising=False)
+    repo = FakeBillingRepo()
+    service = BillingService(repo, FakeOrganizationRepo(role="owner"))
+    payload = json.dumps(
+        {
+            "meta": {"event_name": "subscription_cancelled", "custom_data": {"organization_id": str(ORG_ID)}},
+            "data": {"id": "sub_123", "attributes": {"status": "cancelled", "ends_at": "2026-07-01T00:00:00Z"}},
+        }
+    ).encode("utf-8")
+    signature = hmac.new(b"secret", payload, hashlib.sha256).hexdigest()
+    service.process_webhook(payload, signature)
+    assert repo.updated_plan == "free"
+    assert repo.subscription["plan"] == "free"
 
 
 def test_gemini_json_recovery_and_retry(monkeypatch) -> None:

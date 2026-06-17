@@ -218,6 +218,14 @@ class FakeStorageService:
             "size_bytes": 32,
         }
 
+    async def upload_organization_file(self, organization_id: UUID, file) -> dict:
+        return {
+            "file_path": f"{organization_id}/orders.csv",
+            "file_name": file.filename,
+            "mime_type": file.content_type,
+            "size_bytes": 32,
+        }
+
     def download_file(self, file_path: str) -> bytes:
         return b"date,revenue,orders\n2026-01-01,100,2\n"
 
@@ -425,6 +433,22 @@ def test_create_upload_sets_current_user_as_uploader() -> None:
     )
     assert response.status_code == 201
     assert response.json()["uploaded_by"] == str(USER_ID)
+
+
+def test_upload_file_creates_metadata_for_current_user() -> None:
+    upload_service = FakeUploadService()
+    setup_overrides(role="member", upload_service=upload_service)
+    client = TestClient(app)
+    response = client.post(
+        f"/api/organizations/{ORG_ID}/uploads/file",
+        files={"file": ("orders.csv", b"date,revenue\n2026-01-01,100", "text/csv")},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["uploaded_by"] == str(USER_ID)
+    assert body["organization_id"] == str(ORG_ID)
+    assert body["file_name"] == "orders.csv"
+    assert upload_service.last_org_id == ORG_ID
 
 
 def test_report_routes_use_path_organization_scope() -> None:

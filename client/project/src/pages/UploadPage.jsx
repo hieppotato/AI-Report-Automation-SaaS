@@ -12,12 +12,12 @@ import {
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useUIStore } from '../store/uiStore'
 import { useOrgStore } from '../store/orgStore'
-import { uploadFileToStorage, useCreateUploadMetadata } from '../hooks/useUpload'
+import { useUploadFile } from '../hooks/useUpload'
 
 export function UploadPage() {
   const { addToast } = useUIStore()
   const activeOrg = useOrgStore((state) => state.activeOrg)
-  const createUploadMetadata = useCreateUploadMetadata()
+  const uploadFileMutation = useUploadFile()
   const [file, setFile] = useState(null)
   const [isDragActive, setIsDragActive] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -83,18 +83,9 @@ export function UploadPage() {
     setUploadProgress(0)
 
     try {
-      const { filePath } = await uploadFileToStorage({
-        organizationId: activeOrg.id,
+      await uploadFileMutation.mutateAsync({
         file: file.raw,
         onProgress: setUploadProgress,
-      })
-
-      await createUploadMetadata.mutateAsync({
-        file_name: file.raw.name,
-        file_path: filePath,
-        mime_type: file.raw.type || null,
-        size_bytes: file.raw.size,
-        status: 'uploaded',
       })
 
       setUploadProgress(100)

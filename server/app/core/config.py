@@ -20,9 +20,10 @@ class Settings(BaseSettings):
     generated_reports_bucket: str = Field("generated-reports", alias="GENERATED_REPORTS_BUCKET")
     google_gemini_api_key: str | None = Field(None, alias="GOOGLE_GEMINI_API_KEY")
     google_gemini_model: str = Field("gemini-2.5-flash-20240606", alias="GOOGLE_GEMINI_MODEL")
-    stripe_secret_key: str | None = Field(None, alias="STRIPE_SECRET_KEY")
-    stripe_webhook_secret: str | None = Field(None, alias="STRIPE_WEBHOOK_SECRET")
-    stripe_pro_price_id: str | None = Field(None, alias="STRIPE_PRO_PRICE_ID")
+    lemonsqueezy_api_key: str | None = Field(None, alias="LEMONSQUEEZY_API_KEY")
+    lemonsqueezy_store_id: str | None = Field(None, alias="LEMONSQUEEZY_STORE_ID")
+    lemonsqueezy_variant_id: str | None = Field(None, alias="LEMONSQUEEZY_VARIANT_ID")
+    lemonsqueezy_webhook_secret: str | None = Field(None, alias="LEMONSQUEEZY_WEBHOOK_SECRET")
     app_frontend_url: str = Field("http://localhost:5173", alias="APP_FRONTEND_URL")
     log_level: str = Field("INFO", alias="LOG_LEVEL")
 
@@ -59,8 +60,13 @@ class Settings(BaseSettings):
         return secret
 
     @property
-    def stripe_configured(self) -> bool:
-        return bool(self.stripe_secret_key and self.stripe_webhook_secret and self.stripe_pro_price_id)
+    def lemonsqueezy_configured(self) -> bool:
+        return bool(
+            self.lemonsqueezy_api_key
+            and self.lemonsqueezy_store_id
+            and self.lemonsqueezy_variant_id
+            and self.lemonsqueezy_webhook_secret
+        )
 
 
 @lru_cache

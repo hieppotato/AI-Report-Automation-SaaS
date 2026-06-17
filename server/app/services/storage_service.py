@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import time_ns
 from uuid import UUID
 
 from fastapi import UploadFile
@@ -23,7 +24,7 @@ class StorageService:
         self.bucket = settings.supabase_storage_bucket
         self.generated_bucket = settings.generated_reports_bucket
 
-    async def upload_report_file(self, organization_id: UUID, report_id: UUID, file: UploadFile) -> dict:
+    async def _validate_and_read_upload(self, file: UploadFile) -> tuple[str, str, bytes]:
         file_name = file.filename or "upload"
         suffix = Path(file_name).suffix.lower()
         if suffix not in self.allowed_extensions and file.content_type not in self.allowed_mime_types:
@@ -34,6 +35,31 @@ class StorageService:
             raise AppError("Uploaded file is empty.", status_code=422, code="empty_file")
 
         safe_name = "".join(char if char.isalnum() or char in "._-" else "_" for char in file_name)
+        return file_name, safe_name, content
+
+    async def upload_organization_file(self, organization_id: UUID, file: UploadFile) -> dict:
+        file_name, safe_name, content = await self._validate_and_read_upload(file)
+        timestamp = time_ns() // 1_000_000
+        file_path = f"{organization_id}/{timestamp}-{safe_name}"
+
+        try:
+            self.supabase.storage.from_(self.bucket).upload(
+                file_path,
+                content,
+                {"content-type": file.content_type or "application/octet-stream", "upsert": "false"},
+            )
+        except Exception as exc:
+            raise RepositoryError("Failed to upload file to Supabase Storage.") from exc
+
+        return {
+            "file_path": file_path,
+            "file_name": file_name,
+            "mime_type": file.content_type,
+            "size_bytes": len(content),
+        }
+
+    async def upload_report_file(self, organization_id: UUID, report_id: UUID, file: UploadFile) -> dict:
+        file_name, safe_name, content = await self._validate_and_read_upload(file)
         file_path = f"{organization_id}/reports/{report_id}/{safe_name}"
 
         try:

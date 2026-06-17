@@ -43,7 +43,7 @@ def create_app() -> FastAPI:
                 "source_storage_bucket": bool(settings.supabase_storage_bucket),
                 "generated_reports_bucket": bool(settings.generated_reports_bucket),
                 "gemini": bool(settings.google_gemini_api_key),
-                "stripe": settings.stripe_configured,
+                "lemonsqueezy": settings.lemonsqueezy_configured,
             },
         }
 

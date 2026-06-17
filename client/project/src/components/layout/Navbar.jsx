@@ -15,6 +15,7 @@ import { useUIStore } from '../../store/uiStore'
 import { useAuthStore } from '../../store/authStore'
 import { useOrgStore } from '../../store/orgStore'
 import { cn } from '../../lib/utils'
+import { useBilling } from '../../hooks/useBilling'
 
 export function Navbar() {
   const location = useLocation()
@@ -22,6 +23,8 @@ export function Navbar() {
   const { toggleSidebar, theme, setTheme } = useUIStore()
   const { profile, signOut } = useAuthStore()
   const { organizations, activeOrg, setActiveOrg } = useOrgStore()
+  const { plan: billingPlan } = useBilling()
+  const activePlan = (billingPlan?.plan || activeOrg?.plan || 'free').toUpperCase()
 
   // Dropdown states
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false)
@@ -108,6 +111,14 @@ export function Navbar() {
             >
               <Building className="w-3.5 h-3.5 text-zinc-400" />
               <span className="max-w-[100px] truncate">{activeOrg.name}</span>
+              <span className={cn(
+                "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider",
+                activePlan === 'PRO'
+                  ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/20"
+                  : "bg-zinc-100 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-450 border-zinc-200 dark:border-zinc-800"
+              )}>
+                {activePlan}
+              </span>
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
             </button>
 
@@ -125,15 +136,25 @@ export function Navbar() {
                         setOrgDropdownOpen(false)
                       }}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm transition-all cursor-pointer",
+                        "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm transition-all cursor-pointer gap-2",
                         org.id === activeOrg.id
                           ? "bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium"
                           : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-100"
                       )}
                     >
-                      <span className="truncate">{org.name}</span>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="truncate">{org.name}</span>
+                        <span className={cn(
+                          "inline-flex items-center px-1 py-0.5 rounded text-[8px] font-bold border uppercase tracking-wider flex-shrink-0",
+                          org.plan === 'pro'
+                            ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/20"
+                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-450 border-zinc-200 dark:border-zinc-800"
+                        )}>
+                          {org.plan === 'pro' ? 'PRO' : 'FREE'}
+                        </span>
+                      </div>
                       {org.id === activeOrg.id && (
-                        <Check className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
+                        <Check className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400 flex-shrink-0" />
                       )}
                     </button>
                   ))}

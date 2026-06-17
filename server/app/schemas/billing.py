@@ -7,17 +7,17 @@ from pydantic import BaseModel
 PlanName = Literal["free", "pro"]
 
 
-class CheckoutSessionCreate(BaseModel):
+class CheckoutCreate(BaseModel):
     organization_id: UUID
 
 
-class CheckoutSessionResponse(BaseModel):
+class CheckoutResponse(BaseModel):
     checkout_url: str
-    session_id: str
 
 
 class CurrentPlanResponse(BaseModel):
     organization_id: UUID
     plan: PlanName
-    subscription_status: str | None = None
-    current_period_end: datetime | None = None
+    status: str | None = None
+    renewal_at: datetime | None = None
+    provider: str = "lemonsqueezy"
