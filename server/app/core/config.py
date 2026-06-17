@@ -16,6 +16,16 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = Field(None, alias="SUPABASE_JWT_SECRET")
     jwt_secret: str | None = Field(None, alias="JWT_SECRET")
     supabase_jwt_audience: str = Field("authenticated", alias="SUPABASE_JWT_AUDIENCE")
+    supabase_storage_bucket: str = Field("raw-csv", alias="SUPABASE_STORAGE_BUCKET")
+    generated_reports_bucket: str = Field("generated-reports", alias="GENERATED_REPORTS_BUCKET")
+    google_gemini_api_key: str | None = Field(None, alias="GOOGLE_GEMINI_API_KEY")
+    google_gemini_model: str = Field("gemini-2.5-flash-20240606", alias="GOOGLE_GEMINI_MODEL")
+    lemonsqueezy_api_key: str | None = Field(None, alias="LEMONSQUEEZY_API_KEY")
+    lemonsqueezy_store_id: str | None = Field(None, alias="LEMONSQUEEZY_STORE_ID")
+    lemonsqueezy_variant_id: str | None = Field(None, alias="LEMONSQUEEZY_VARIANT_ID")
+    lemonsqueezy_webhook_secret: str | None = Field(None, alias="LEMONSQUEEZY_WEBHOOK_SECRET")
+    app_frontend_url: str = Field("http://localhost:5173", alias="APP_FRONTEND_URL")
+    log_level: str = Field("INFO", alias="LOG_LEVEL")
 
     backend_cors_origins: str | list[str] = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",
@@ -48,6 +58,15 @@ class Settings(BaseSettings):
         if not secret:
             raise RuntimeError("SUPABASE_JWT_SECRET or JWT_SECRET must be configured.")
         return secret
+
+    @property
+    def lemonsqueezy_configured(self) -> bool:
+        return bool(
+            self.lemonsqueezy_api_key
+            and self.lemonsqueezy_store_id
+            and self.lemonsqueezy_variant_id
+            and self.lemonsqueezy_webhook_secret
+        )
 
 
 @lru_cache

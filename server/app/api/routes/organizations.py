@@ -13,8 +13,10 @@ from app.schemas.organization import (
     AddOrganizationMemberRequest,
     OrganizationCreate,
     OrganizationMemberResponse,
+    OrganizationMemberUpdate,
     OrganizationResponse,
 )
+from app.schemas.pagination import PaginatedResponse, PaginationParams, get_pagination_params
 from app.services.organization_service import OrganizationService
 
 router = APIRouter()
@@ -44,13 +46,14 @@ def get_organization(
     return context.organization
 
 
-@router.get("/{organization_id}/members", response_model=list[OrganizationMemberResponse])
+@router.get("/{organization_id}/members", response_model=PaginatedResponse[OrganizationMemberResponse])
 def list_members(
     organization_id: UUID,
     _: OrganizationContext = Depends(require_org_member),
+    pagination: PaginationParams = Depends(get_pagination_params),
     service: OrganizationService = Depends(get_organization_service),
-) -> list[dict]:
-    return service.list_members(organization_id)
+) -> PaginatedResponse[dict]:
+    return service.list_members(organization_id, pagination)
 
 
 @router.post(
@@ -65,6 +68,17 @@ def add_member(
     service: OrganizationService = Depends(get_organization_service),
 ) -> dict:
     return service.add_member(organization_id, payload)
+
+
+@router.patch("/{organization_id}/members/{member_id}", response_model=OrganizationMemberResponse)
+def update_member_role(
+    organization_id: UUID,
+    member_id: UUID,
+    payload: OrganizationMemberUpdate,
+    context: OrganizationContext = Depends(require_org_admin),
+    service: OrganizationService = Depends(get_organization_service),
+) -> dict:
+    return service.update_member_role(organization_id, member_id, payload, requester_id=context.user_id)
 
 
 @router.delete("/{organization_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

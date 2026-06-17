@@ -3,7 +3,8 @@ from uuid import UUID
 
 from supabase import Client
 
-from app.repositories.base import execute_query, first_or_none
+from app.core.exceptions import RepositoryError
+from app.repositories.base import execute_query, first_or_none, response_count
 from app.schemas.organization import AddOrganizationMemberRequest, OrganizationCreate
 
 
@@ -72,18 +73,41 @@ class OrganizationRepository:
         )
         return first_or_none(response.data)
 
-    def list_members(self, organization_id: UUID) -> list[dict[str, Any]]:
-        response = execute_query(
-            lambda: self.supabase.table("organization_members")
+    def list_members(self, organization_id: UUID, limit: int | None = None, offset: int = 0) -> list[dict[str, Any]]:
+        query = (
+            self.supabase.table("organization_members")
             .select("*")
             .eq("organization_id", str(organization_id))
             .order("created_at", desc=False)
-            .execute(),
+        )
+        if limit is not None:
+            query = query.range(offset, offset + limit - 1)
+        response = execute_query(
+            lambda: query.execute(),
             "Failed to list organization members",
         )
         return response.data or []
 
+    def list_members_paginated(
+        self,
+        organization_id: UUID,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[dict[str, Any]], int]:
+        response = execute_query(
+            lambda: self.supabase.table("organization_members")
+            .select("*", count="exact")
+            .eq("organization_id", str(organization_id))
+            .order("created_at", desc=False)
+            .range(offset, offset + limit - 1)
+            .execute(),
+            "Failed to list organization members",
+        )
+        return response.data or [], response_count(response)
+
     def add_member(self, organization_id: UUID, payload: AddOrganizationMemberRequest) -> dict[str, Any]:
+        if payload.user_id is None:
+            raise RepositoryError("Cannot add organization member without a user id.")
         data = {
             "organization_id": str(organization_id),
             "user_id": str(payload.user_id),
@@ -95,6 +119,17 @@ class OrganizationRepository:
         )
         return response.data[0]
 
+    def get_user_id_by_email(self, email: str) -> UUID | None:
+        try:
+            users = self.supabase.auth.admin.list_users()
+        except Exception as exc:
+            raise RepositoryError("Failed to lookup Supabase user by email.") from exc
+
+        for user in users:
+            if (user.email or "").lower() == email.lower():
+                return UUID(str(user.id))
+        return None
+
     def remove_member(self, organization_id: UUID, user_id: UUID) -> bool:
         response = execute_query(
             lambda: self.supabase.table("organization_members")
@@ -105,3 +140,26 @@ class OrganizationRepository:
             "Failed to remove organization member",
         )
         return bool(response.data)
+
+    def get_membership_by_id(self, organization_id: UUID, member_id: UUID) -> dict[str, Any] | None:
+        response = execute_query(
+            lambda: self.supabase.table("organization_members")
+            .select("*")
+            .eq("organization_id", str(organization_id))
+            .eq("id", str(member_id))
+            .limit(1)
+            .execute(),
+            "Failed to fetch organization member",
+        )
+        return first_or_none(response.data)
+
+    def update_member_role(self, organization_id: UUID, member_id: UUID, role: str) -> dict[str, Any] | None:
+        response = execute_query(
+            lambda: self.supabase.table("organization_members")
+            .update({"role": role})
+            .eq("organization_id", str(organization_id))
+            .eq("id", str(member_id))
+            .execute(),
+            "Failed to update organization member role",
+        )
+        return first_or_none(response.data)
