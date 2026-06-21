@@ -3,7 +3,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Response, UploadFile, status
 
-from app.api.deps import get_report_repository, get_storage_service, get_upload_repository, get_report_service, require_org_member
+from app.api.deps import (
+    get_audit_service,
+    get_report_repository,
+    get_storage_service,
+    get_upload_repository,
+    get_report_service,
+    get_usage_service,
+    require_org_member,
+)
 from app.core.exceptions import RepositoryError
 from app.schemas.auth import OrganizationContext
 from app.schemas.pagination import PaginatedResponse, PaginationParams, get_pagination_params
@@ -12,8 +20,10 @@ from app.schemas.upload import UploadCreate
 from app.repositories.report_repo import ReportRepository
 from app.repositories.upload_repo import UploadRepository
 from app.services.ai_pipeline import AIPipelineService
+from app.services.audit_service import AuditService
 from app.services.storage_service import StorageService
 from app.services.report_service import ReportService
+from app.services.usage_service import UsageService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -46,10 +56,15 @@ def list_reports(
 def create_report(
     organization_id: UUID,
     payload: ReportCreate,
-    _: OrganizationContext = Depends(require_org_member),
+    context: OrganizationContext = Depends(require_org_member),
     service: ReportService = Depends(get_report_service),
+    usage_service: UsageService = Depends(get_usage_service),
+    audit: AuditService = Depends(get_audit_service),
 ) -> dict:
-    return service.create_report(organization_id, payload)
+    usage_service.enforce_report_creation(organization_id)
+    report = service.create_report(organization_id, payload)
+    audit.log_event(organization_id, context.user_id, "report.created", "report", str(report.get("id")))
+    return report
 
 
 @router.post("/{organization_id}/reports/{report_id}/upload", response_model=ReportResponse)
@@ -63,8 +78,12 @@ async def upload_report_file(
     report_repo: ReportRepository = Depends(get_report_repository),
     upload_repo: UploadRepository = Depends(get_upload_repository),
     storage_service: StorageService = Depends(get_storage_service),
+    usage_service: UsageService = Depends(get_usage_service),
 ) -> dict:
     service.get_report(organization_id, report_id)
+    content = await file.read()
+    usage_service.enforce_storage_upload(organization_id, len(content))
+    await file.seek(0)
     report_repo.update_report_fields(
         organization_id,
         report_id,
@@ -155,8 +174,10 @@ def update_report(
 def delete_report(
     organization_id: UUID,
     report_id: UUID,
-    _: OrganizationContext = Depends(require_org_member),
+    context: OrganizationContext = Depends(require_org_member),
     service: ReportService = Depends(get_report_service),
+    audit: AuditService = Depends(get_audit_service),
 ) -> Response:
     service.delete_report(organization_id, report_id)
+    audit.log_event(organization_id, context.user_id, "report.deleted", "report", str(report_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -19,6 +19,7 @@ import { MembersPage } from '../../pages/MembersPage'
 import { BillingPage } from '../../pages/BillingPage'
 import { ProfilePage } from '../../pages/ProfilePage'
 import { OnboardingPage } from '../../pages/OnboardingPage'
+import { AuditLogsPage } from '../../pages/AuditLogsPage'
 
 // Force authorization and workspace tenants
 function ProtectedRoute({ children }) {
@@ -166,6 +167,14 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/audit-logs"
+        element={
+          <ProtectedRoute>
+            <AuditLogsPage />
           </ProtectedRoute>
         }
       />

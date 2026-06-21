@@ -4,6 +4,7 @@ import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useBilling } from '../hooks/useBilling'
 import { useReports } from '../hooks/useReports'
 import { useMembers } from '../hooks/useMembers'
+import { useUploads } from '../hooks/useUpload'
 import { useOrgStore } from '../store/orgStore'
 
 export function BillingPage() {
@@ -11,13 +12,28 @@ export function BillingPage() {
   const { plan: apiPlan, isLoading: planLoading, upgradeToPro, isUpgrading, isPolling } = useBilling()
   const { data: reportsResult } = useReports()
   const { data: membersResult } = useMembers()
+  const { data: uploadsResult } = useUploads()
 
   const reportCount = reportsResult?.items?.length || 0
   const memberCount = membersResult?.items?.length || 0
 
+  // Calculate storage usage
+  const uploadsList = uploadsResult?.items || []
+  const storageUsedBytes = uploadsList.reduce((acc, item) => acc + (item.size_bytes || 0), 0)
+  const storageUsedMB = parseFloat((storageUsedBytes / (1024 * 1024)).toFixed(2))
+
   // Standardize plan active state from API or store fallback
   const activePlanName = (apiPlan?.plan || activeOrg?.plan || 'free').toLowerCase()
   const isPro = activePlanName === 'pro'
+
+  const reportsLimit = isPro ? 100 : 3
+  const reportsRemaining = Math.max(0, reportsLimit - reportCount)
+
+  const storageLimitMB = isPro ? 100 : 10
+  const storageRemainingMB = parseFloat(Math.max(0, storageLimitMB - storageUsedMB).toFixed(2))
+
+  const seatsLimit = isPro ? 5 : 1
+  const seatsRemaining = Math.max(0, seatsLimit - memberCount)
 
   const handleUpgrade = async (planName) => {
     if (planName === 'pro') {
@@ -71,7 +87,7 @@ export function BillingPage() {
 
     if (status === 'expired') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/25">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/25">
           Expired
         </span>
       )
@@ -131,7 +147,8 @@ export function BillingPage() {
           <div className="h-4 w-96 bg-zinc-150 dark:bg-zinc-900 rounded animate-pulse" />
         </div>
         <div className="h-44 bg-zinc-200 dark:bg-zinc-850 rounded-xl animate-pulse mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="h-32 bg-zinc-200 dark:bg-zinc-850 rounded-xl animate-pulse" />
           <div className="h-32 bg-zinc-200 dark:bg-zinc-850 rounded-xl animate-pulse" />
           <div className="h-32 bg-zinc-200 dark:bg-zinc-850 rounded-xl animate-pulse" />
         </div>
@@ -163,14 +180,14 @@ export function BillingPage() {
         </div>
       )}
 
-      {/* Current Subscription Section */}
+      {/* Current Plan & Details */}
       {!apiPlan || activePlanName === 'free' ? (
         <div className="card border border-dashed border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 mb-8 text-center flex flex-col items-center justify-center py-8">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 text-zinc-400 dark:text-zinc-500 mb-3.5">
             <CreditCard className="w-5 h-5" />
           </div>
           <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">You're currently on the Free plan.</h3>
-          <p className="mt-2 text-xs text-zinc-550 dark:text-zinc-400 max-w-md leading-relaxed">
+          <p className="mt-2 text-xs text-zinc-555 dark:text-zinc-400 max-w-md leading-relaxed">
             Upgrade to the Pro plan to expand your processed reports limit, upload advanced Excel/PDF files, invite team members, and get access to our AI diagnostics engine.
           </p>
           <button
@@ -234,47 +251,74 @@ export function BillingPage() {
       )}
 
       {/* Usage Quotas Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Reports Ingestion Quota */}
         <div className="card">
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4 text-zinc-400" />
-              Monthly Ingestion Quota
+              <CreditCard className="w-4 h-4 text-zinc-400 animate-pulse" />
+              Reports Ingestion
             </span>
             <span className="font-mono text-zinc-500 dark:text-zinc-450">
-              {reportCount} / {isPro ? 100 : 3} reports used
+              {reportCount} / {reportsLimit} reports
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
             <div 
-              className="h-full rounded-full bg-brand-650 transition-all duration-500" 
-              style={{ width: `${Math.min(100, (reportCount / (isPro ? 100 : 3)) * 100)}%` }} 
+              className="h-full rounded-full bg-brand-600 transition-all duration-500" 
+              style={{ width: `${Math.min(100, (reportCount / reportsLimit) * 100)}%` }} 
             />
           </div>
-          <p className="mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            {isPro ? 'Pro plan allows up to 100 generated reports.' : 'Upgrade to Pro to expand limit to 100 monthly reports.'}
-          </p>
+          <div className="flex justify-between items-center mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span>{reportsRemaining} reports remaining</span>
+            <span>Limit: {reportsLimit}/mo</span>
+          </div>
         </div>
 
+        {/* Storage Space Quota */}
+        <div className="card">
+          <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+            <span className="flex items-center gap-1.5">
+              <HelpCircle className="w-4 h-4 text-zinc-400" />
+              Storage Space
+            </span>
+            <span className="font-mono text-zinc-500 dark:text-zinc-450">
+              {storageUsedMB} MB / {storageLimitMB} MB
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
+            <div 
+              className="h-full rounded-full bg-brand-600 transition-all duration-500" 
+              style={{ width: `${Math.min(100, (storageUsedMB / storageLimitMB) * 100)}%` }} 
+            />
+          </div>
+          <div className="flex justify-between items-center mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span>{storageRemainingMB} MB remaining</span>
+            <span>Limit: {storageLimitMB} MB</span>
+          </div>
+        </div>
+
+        {/* Workspace Seat Quota */}
         <div className="card">
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-zinc-400" />
-              Workspace Seat Quota
+              Workspace Seats
             </span>
             <span className="font-mono text-zinc-500 dark:text-zinc-450">
-              {memberCount} / {isPro ? 5 : 1} seats utilized
+              {memberCount} / {seatsLimit} seats
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
             <div 
               className="h-full rounded-full bg-brand-650 transition-all duration-500" 
-              style={{ width: `${Math.min(100, (memberCount / (isPro ? 5 : 1)) * 100)}%` }} 
+              style={{ width: `${Math.min(100, (memberCount / seatsLimit) * 100)}%` }} 
             />
           </div>
-          <p className="mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            {isPro ? 'Pro plan includes up to 5 team seats.' : 'Free plan limits workspace access to 1 seat.'}
-          </p>
+          <div className="flex justify-between items-center mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+            <span>{seatsRemaining} seats remaining</span>
+            <span>Limit: {seatsLimit} seats</span>
+          </div>
         </div>
       </div>
 

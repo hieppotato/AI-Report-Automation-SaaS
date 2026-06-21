@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response, status
 
 from app.api.deps import (
+    get_audit_service,
     get_current_user,
     get_organization_service,
     require_org_admin,
@@ -18,6 +19,7 @@ from app.schemas.organization import (
 )
 from app.schemas.pagination import PaginatedResponse, PaginationParams, get_pagination_params
 from app.services.organization_service import OrganizationService
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -77,8 +79,18 @@ def update_member_role(
     payload: OrganizationMemberUpdate,
     context: OrganizationContext = Depends(require_org_admin),
     service: OrganizationService = Depends(get_organization_service),
+    audit: AuditService = Depends(get_audit_service),
 ) -> dict:
-    return service.update_member_role(organization_id, member_id, payload, requester_id=context.user_id)
+    member = service.update_member_role(organization_id, member_id, payload, requester_id=context.user_id)
+    audit.log_event(
+        organization_id,
+        context.user_id,
+        "role.changed",
+        "organization_member",
+        str(member_id),
+        {"role": payload.role, "user_id": str(member.get("user_id"))},
+    )
+    return member
 
 
 @router.delete("/{organization_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -87,6 +99,8 @@ def remove_member(
     user_id: UUID,
     context: OrganizationContext = Depends(require_org_admin),
     service: OrganizationService = Depends(get_organization_service),
+    audit: AuditService = Depends(get_audit_service),
 ) -> Response:
     service.remove_member(organization_id, user_id, requester_role=context.role, requester_id=context.user_id)
+    audit.log_event(organization_id, context.user_id, "member.removed", "organization_member", str(user_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

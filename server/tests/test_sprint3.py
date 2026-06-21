@@ -8,7 +8,14 @@ import pytest
 
 from fastapi.testclient import TestClient
 
-from app.api.deps import get_billing_service, get_current_user, get_export_service, get_organization_service
+from app.api.deps import (
+    get_audit_service,
+    get_billing_service,
+    get_current_user,
+    get_export_service,
+    get_organization_service,
+    get_usage_service,
+)
 from app.core.exceptions import AppError, PermissionDeniedError
 from app.main import app
 from app.schemas.auth import CurrentUser
@@ -77,6 +84,16 @@ class FakeBillingRouteService:
         if signature != "valid":
             raise AppError("Invalid LemonSqueezy webhook signature.", status_code=400, code="invalid_webhook_signature")
         return {"received": True}
+
+
+class FakeUsageService:
+    def enforce_export_format(self, organization_id: UUID, export_format: str) -> None:
+        return None
+
+
+class FakeAuditService:
+    def log_event(self, *args, **kwargs) -> None:
+        return None
 
 
 class FakeBillingRepo:
@@ -148,6 +165,8 @@ def setup_route_overrides(role: str | None = "owner") -> None:
     app.dependency_overrides[get_organization_service] = lambda: FakeOrganizationService(role)
     app.dependency_overrides[get_export_service] = lambda: FakeExportService()
     app.dependency_overrides[get_billing_service] = lambda: FakeBillingRouteService()
+    app.dependency_overrides[get_usage_service] = lambda: FakeUsageService()
+    app.dependency_overrides[get_audit_service] = lambda: FakeAuditService()
 
 
 def teardown_function() -> None:

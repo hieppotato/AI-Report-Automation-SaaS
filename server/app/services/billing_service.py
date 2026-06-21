@@ -12,12 +12,19 @@ from app.core.exceptions import AppError, NotFoundError, PermissionDeniedError
 from app.repositories.billing_repo import BillingRepository
 from app.repositories.organization_repo import OrganizationRepository
 from app.schemas.billing import CheckoutResponse, CurrentPlanResponse
+from app.services.audit_service import AuditService
 
 
 class BillingService:
-    def __init__(self, billing_repo: BillingRepository, organization_repo: OrganizationRepository) -> None:
+    def __init__(
+        self,
+        billing_repo: BillingRepository,
+        organization_repo: OrganizationRepository,
+        audit_service: AuditService | None = None,
+    ) -> None:
         self.billing_repo = billing_repo
         self.organization_repo = organization_repo
+        self.audit_service = audit_service
 
     def create_checkout_url(self, organization_id: UUID, user_email: str | None) -> CheckoutResponse:
         self._require_lemonsqueezy_config()
@@ -127,6 +134,15 @@ class BillingService:
             },
         )
         self.billing_repo.update_organization_plan(organization_id, plan)
+        if self.audit_service and plan == "pro":
+            self.audit_service.log_event(
+                organization_id,
+                None,
+                "billing.upgraded",
+                "subscription",
+                str(data.get("id") or ""),
+                {"provider": "lemonsqueezy", "status": status},
+            )
 
     def _verify_signature(self, payload: bytes, signature: str | None) -> None:
         if not signature:

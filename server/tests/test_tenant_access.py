@@ -12,6 +12,8 @@ from app.api.deps import (
     get_storage_service,
     get_upload_repository,
     get_upload_service,
+    get_usage_service,
+    get_audit_service,
 )
 from app.main import app
 from app.schemas.auth import CurrentUser
@@ -266,6 +268,22 @@ class FakeUploadService:
         }
 
 
+class FakeUsageService:
+    def enforce_report_creation(self, organization_id: UUID) -> None:
+        return None
+
+    def enforce_storage_upload(self, organization_id: UUID, incoming_size_bytes: int) -> None:
+        return None
+
+    def enforce_export_format(self, organization_id: UUID, export_format: str) -> None:
+        return None
+
+
+class FakeAuditService:
+    def log_event(self, *args, **kwargs) -> None:
+        return None
+
+
 def fake_current_user() -> CurrentUser:
     exp = datetime.now(tz=timezone.utc) + timedelta(minutes=15)
     return CurrentUser(id=USER_ID, email="user@example.com", role="authenticated", aud="authenticated", exp=exp)
@@ -299,6 +317,8 @@ def setup_overrides(
         app.dependency_overrides[get_report_repository] = lambda: report_repo
     app.dependency_overrides[get_upload_repository] = lambda: FakeUploadRepository()
     app.dependency_overrides[get_storage_service] = lambda: FakeStorageService()
+    app.dependency_overrides[get_usage_service] = lambda: FakeUsageService()
+    app.dependency_overrides[get_audit_service] = lambda: FakeAuditService()
 
 
 def teardown_function() -> None:
