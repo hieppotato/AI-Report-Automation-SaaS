@@ -24,6 +24,16 @@ class PermissionDeniedError(AppError):
         super().__init__(message, status.HTTP_403_FORBIDDEN, "forbidden")
 
 
+class QuotaExceededError(AppError):
+    def __init__(self, message: str = "Usage quota exceeded.") -> None:
+        super().__init__(message, status.HTTP_403_FORBIDDEN, "quota_exceeded")
+
+
+class PlanLimitError(AppError):
+    def __init__(self, message: str = "This feature is not available on the current plan.") -> None:
+        super().__init__(message, status.HTTP_403_FORBIDDEN, "plan_limit_exceeded")
+
+
 class RepositoryError(AppError):
     def __init__(self, message: str = "Database operation failed.") -> None:
         super().__init__(message, status.HTTP_502_BAD_GATEWAY, "upstream_database_error")

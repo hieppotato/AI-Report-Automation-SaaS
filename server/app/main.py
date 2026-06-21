@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, billing, exports, organizations, profile, reports, uploads
+from app.api.routes import audit, auth, billing, exports, invitations, organizations, profile, reports, uploads, usage
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import register_exception_handlers
@@ -53,6 +53,10 @@ def create_app() -> FastAPI:
     app.include_router(reports.router, prefix="/api/organizations", tags=["reports"])
     app.include_router(exports.router, prefix="/api/organizations", tags=["exports"])
     app.include_router(uploads.router, prefix="/api/organizations", tags=["uploads"])
+    app.include_router(invitations.router, prefix="/api/organizations", tags=["invitations"])
+    app.include_router(invitations.public_router, prefix="/api/invitations", tags=["invitations"])
+    app.include_router(audit.router, prefix="/api/organizations", tags=["audit"])
+    app.include_router(usage.router, prefix="/api/usage", tags=["usage"])
     app.include_router(billing.router, prefix="/api/billing", tags=["billing"])
 
     return app

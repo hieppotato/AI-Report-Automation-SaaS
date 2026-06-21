@@ -8,17 +8,23 @@ from supabase import Client
 from app.core.exceptions import NotFoundError, PermissionDeniedError
 from app.core.security import current_user_from_token, extract_bearer_token
 from app.core.supabase import get_supabase_admin
+from app.repositories.audit_repo import AuditRepository
 from app.repositories.billing_repo import BillingRepository
+from app.repositories.invitation_repo import InvitationRepository
 from app.repositories.organization_repo import OrganizationRepository
 from app.repositories.profile_repo import ProfileRepository
 from app.repositories.report_repo import ReportRepository
+from app.repositories.usage_repo import UsageRepository
 from app.repositories.upload_repo import UploadRepository
 from app.schemas.auth import CurrentUser, OrganizationContext
+from app.services.audit_service import AuditService
 from app.services.billing_service import BillingService
 from app.services.export_service import ExportService
+from app.services.invitation_service import InvitationService
 from app.services.organization_service import OrganizationService
 from app.services.profile_service import ProfileService
 from app.services.report_service import ReportService
+from app.services.usage_service import UsageService
 from app.services.upload_service import UploadService
 from app.services.storage_service import StorageService
 
@@ -69,6 +75,24 @@ def get_billing_repository(
     return BillingRepository(supabase)
 
 
+def get_usage_repository(
+    supabase: Client = Depends(get_supabase_admin),
+) -> UsageRepository:
+    return UsageRepository(supabase)
+
+
+def get_invitation_repository(
+    supabase: Client = Depends(get_supabase_admin),
+) -> InvitationRepository:
+    return InvitationRepository(supabase)
+
+
+def get_audit_repository(
+    supabase: Client = Depends(get_supabase_admin),
+) -> AuditRepository:
+    return AuditRepository(supabase)
+
+
 def get_organization_service(
     repo: OrganizationRepository = Depends(get_organization_repository),
 ) -> OrganizationService:
@@ -106,11 +130,31 @@ def get_export_service(
     return ExportService(report_repo, storage_service)
 
 
+def get_audit_service(
+    repo: AuditRepository = Depends(get_audit_repository),
+) -> AuditService:
+    return AuditService(repo)
+
+
 def get_billing_service(
     billing_repo: BillingRepository = Depends(get_billing_repository),
     organization_repo: OrganizationRepository = Depends(get_organization_repository),
+    audit_service: AuditService = Depends(get_audit_service),
 ) -> BillingService:
-    return BillingService(billing_repo, organization_repo)
+    return BillingService(billing_repo, organization_repo, audit_service)
+
+
+def get_usage_service(
+    repo: UsageRepository = Depends(get_usage_repository),
+) -> UsageService:
+    return UsageService(repo)
+
+
+def get_invitation_service(
+    invitation_repo: InvitationRepository = Depends(get_invitation_repository),
+    organization_repo: OrganizationRepository = Depends(get_organization_repository),
+) -> InvitationService:
+    return InvitationService(invitation_repo, organization_repo)
 
 
 def require_org_member(

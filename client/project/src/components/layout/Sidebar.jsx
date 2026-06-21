@@ -10,21 +10,32 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  ClipboardList
 } from 'lucide-react'
 import { useUIStore } from '../../store/uiStore'
 import { cn } from '../../lib/utils'
+import { useInvitations } from '../../hooks/useMembers'
+import { useReports } from '../../hooks/useReports'
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUIStore()
 
+  // Queries for badge counts
+  const { data: invitations = [] } = useInvitations()
+  const { data: reportsResult } = useReports()
+
+  const pendingCount = invitations.length
+  const processingCount = reportsResult?.items?.filter(r => r.status === 'processing').length || 0
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Reports', path: '/reports', icon: FileText },
+    { name: 'Reports', path: '/reports', icon: FileText, badge: processingCount },
     { name: 'Upload Data', path: '/upload', icon: UploadCloud },
-    { name: 'Team Members', path: '/members', icon: Users },
+    { name: 'Team Members', path: '/members', icon: Users, badge: pendingCount },
     { name: 'Billing', path: '/billing', icon: CreditCard },
     { name: 'Org Settings', path: '/organization', icon: Settings },
+    { name: 'Audit Logs', path: '/audit-logs', icon: ClipboardList },
     { name: 'User Profile', path: '/profile', icon: User },
   ]
 
@@ -75,13 +86,29 @@ export function Sidebar() {
               )
             }
           >
-            <item.icon className="w-4 h-4 flex-shrink-0" />
-            {sidebarOpen ? (
-              <span className="truncate">{item.name}</span>
-            ) : (
-              <span className="absolute left-14 z-50 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-300 opacity-0 shadow-md transition-opacity group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                {item.name}
-              </span>
+            {({ isActive }) => (
+              <>
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                {sidebarOpen ? (
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="truncate">{item.name}</span>
+                    {item.badge > 0 && (
+                      <span className={cn(
+                        "ml-2 px-1.5 py-0.5 text-[9px] font-bold rounded-full font-mono shrink-0",
+                        isActive
+                          ? "bg-brand-500 text-white dark:bg-brand-600"
+                          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                      )}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="absolute left-14 z-50 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1 text-xs text-zinc-700 dark:text-zinc-300 opacity-0 shadow-md transition-opacity group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                    {item.name} {item.badge > 0 ? `(${item.badge})` : ''}
+                  </span>
+                )}
+              </>
             )}
           </NavLink>
         ))}
@@ -92,7 +119,7 @@ export function Sidebar() {
         {!sidebarOpen ? (
           <button
             onClick={toggleSidebar}
-            className="flex h-10 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
+            className="flex h-10 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -111,3 +138,5 @@ export function Sidebar() {
     </aside>
   )
 }
+
+export default Sidebar

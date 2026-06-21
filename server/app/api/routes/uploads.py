@@ -2,11 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 
-from app.api.deps import get_storage_service, get_upload_service, require_org_member
+from app.api.deps import get_storage_service, get_upload_service, get_usage_service, require_org_member
 from app.schemas.auth import OrganizationContext
 from app.schemas.pagination import PaginatedResponse, PaginationParams, get_pagination_params
 from app.schemas.upload import UploadCreate, UploadResponse
 from app.services.storage_service import StorageService
+from app.services.usage_service import UsageService
 from app.services.upload_service import UploadService
 
 router = APIRouter()
@@ -37,7 +38,11 @@ async def upload_file(
     context: OrganizationContext = Depends(require_org_member),
     storage_service: StorageService = Depends(get_storage_service),
     upload_service: UploadService = Depends(get_upload_service),
+    usage_service: UsageService = Depends(get_usage_service),
 ) -> dict:
+    content = await file.read()
+    usage_service.enforce_storage_upload(organization_id, len(content))
+    await file.seek(0)
     stored_file = await storage_service.upload_organization_file(organization_id, file)
     return upload_service.create_upload(
         organization_id,
