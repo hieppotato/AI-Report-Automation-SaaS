@@ -19,6 +19,7 @@ from app.repositories.upload_repo import UploadRepository
 from app.schemas.auth import CurrentUser, OrganizationContext
 from app.services.audit_service import AuditService
 from app.services.billing_service import BillingService
+from app.services.email_service import EmailService
 from app.services.export_service import ExportService
 from app.services.invitation_service import InvitationService
 from app.services.organization_service import OrganizationService
@@ -150,11 +151,16 @@ def get_usage_service(
     return UsageService(repo)
 
 
+def get_email_service() -> EmailService:
+    return EmailService()
+
+
 def get_invitation_service(
     invitation_repo: InvitationRepository = Depends(get_invitation_repository),
     organization_repo: OrganizationRepository = Depends(get_organization_repository),
+    email_service: EmailService = Depends(get_email_service),
 ) -> InvitationService:
-    return InvitationService(invitation_repo, organization_repo)
+    return InvitationService(invitation_repo, organization_repo, email_service)
 
 
 def require_org_member(

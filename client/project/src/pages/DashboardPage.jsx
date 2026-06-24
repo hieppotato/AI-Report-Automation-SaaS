@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { TrendingUp, TrendingDown, Upload, UserPlus, FileSpreadsheet, ArrowUpRight, RefreshCw, Sparkles, Zap } from 'lucide-react'
+import { TrendingUp, TrendingDown, Upload, UserPlus, FileSpreadsheet, ArrowUpRight, RefreshCw, Sparkles, Zap, CheckCircle, XCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { MiniLineChart } from '../components/charts/MiniLineChart'
@@ -9,6 +9,7 @@ import { formatCurrency, formatNumber, formatDate } from '../lib/utils'
 import { useUIStore } from '../store/uiStore'
 import { useOrgStore } from '../store/orgStore'
 import { useReportSummary, useReports } from '../hooks/useReports'
+import { useMyPendingInvitations, useAcceptMyInvitation } from '../hooks/useMembers'
 import { LoadingState } from '../components/reports/LoadingState'
 
 export function DashboardPage() {
@@ -19,6 +20,10 @@ export function DashboardPage() {
   const { data: reportsResult, isLoading: reportsLoading } = useReports({ limit: 5, offset: 0 })
 
   const reports = reportsResult?.items || []
+
+  // Pending invitations
+  const { data: pendingInvites = [], isLoading: invitesLoading } = useMyPendingInvitations()
+  const acceptInvite = useAcceptMyInvitation()
 
   // Automatic invalidation of dashboard KPI cards & charts when reports transition from processing to complete/failed
   const activeReportsCount = reports.filter(r => r.status === 'processing' || r.status === 'uploading').length
@@ -123,6 +128,42 @@ export function DashboardPage() {
       {summaryError && (
         <div className="mb-6 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {summaryError.message}
+        </div>
+      )}
+
+      {!invitesLoading && pendingInvites.length > 0 && (
+        <div className="mb-6 rounded-lg border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-950/30 px-5 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-900/50">
+                <UserPlus className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Pending Invitations</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">You have {pendingInvites.length} pending workspace invitation{pendingInvites.length > 1 ? 's' : ''}.</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 space-y-2">
+            {pendingInvites.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-white dark:bg-zinc-900/50 border border-brand-100 dark:border-brand-900/50">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{inv.organization_name}</span>
+                  <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 capitalize">{inv.role}</span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => acceptInvite.mutate(inv.token)}
+                    disabled={acceptInvite.isPending}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 text-white text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Accept
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

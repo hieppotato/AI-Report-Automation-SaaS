@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,6 +7,7 @@ import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../hooks/useAuth'
 import { useUIStore } from '../store/uiStore'
+import { acceptInvitation } from '../api/invitations'
 
 const schema = z.object({
   fullName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -16,10 +17,12 @@ const schema = z.object({
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('invite_token')
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
   const { addToast } = useUIStore()
-  const { register: registerAccount } = useAuth()
+  const { register: registerAccount, login } = useAuth()
 
   const {
     register,
@@ -31,15 +34,33 @@ export function RegisterPage() {
     setServerError('')
     try {
       await registerAccount(data)
-      addToast('Registration successful. Please check your email.', 'success')
-      navigate('/login')
+
+      if (inviteToken) {
+        await login({ email: data.email, password: data.password })
+        try {
+          await acceptInvitation({ token: inviteToken })
+          addToast('Account created and invitation accepted!', 'success')
+          navigate('/dashboard', { replace: true })
+        } catch (acceptError) {
+          // Redirect to accept page so user sees a proper error state with context
+          navigate(`/invitations/accept?token=${inviteToken}`, { replace: true })
+        }
+      } else {
+        addToast('Registration successful. Please check your email.', 'success')
+        navigate('/login')
+      }
     } catch (error) {
       setServerError(error.message)
     }
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="Get started with Reportly today">
+    <AuthLayout title={inviteToken ? "Create your account to join" : "Create your account"} subtitle={inviteToken ? "You've been invited to join a workspace" : "Get started with Reportly today"}>
+      {inviteToken && (
+        <div className="mb-4 px-3.5 py-3 rounded-lg bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 text-sm">
+          You've been invited to join a workspace. Create an account to accept.
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {serverError && (
           <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
@@ -82,13 +103,13 @@ export function RegisterPage() {
         </div>
 
         <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-10 mt-2">
-          {isSubmitting ? 'Creating account...' : 'Create account'}
+          {isSubmitting ? 'Creating account...' : inviteToken ? 'Create Account & Join' : 'Create account'}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
         Already have an account?{' '}
-        <Link to="/login" className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
+        <Link to={inviteToken ? `/login?invite_token=${inviteToken}` : "/login"} className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
           Sign in
         </Link>
       </p>

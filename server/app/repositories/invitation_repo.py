@@ -72,3 +72,17 @@ class InvitationRepository:
             "Failed to delete invitation",
         )
         return bool(response.data)
+
+    def list_by_email(self, email: str) -> list[dict]:
+        """Return all pending invitations for a given email across all organizations."""
+        response = execute_query(
+            lambda: self.supabase.table("organization_invitations")
+            .select("*")
+            .eq("email", email.strip().lower())
+            .eq("status", "pending")
+            .order("created_at", desc=True)
+            .execute(),
+            "Failed to list invitations by email",
+        )
+        return response.data or []
+

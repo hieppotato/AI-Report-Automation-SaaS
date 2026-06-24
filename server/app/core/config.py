@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     supabase_jwt_audience: str = Field("authenticated", alias="SUPABASE_JWT_AUDIENCE")
     supabase_storage_bucket: str = Field("raw-csv", alias="SUPABASE_STORAGE_BUCKET")
     generated_reports_bucket: str = Field("generated-reports", alias="GENERATED_REPORTS_BUCKET")
+    resend_api_key: str | None = Field(None, alias="RESEND_API_KEY")
+    invite_from_email: str | None = Field(None, alias="INVITE_FROM_EMAIL")
     google_gemini_api_key: str | None = Field(None, alias="GOOGLE_GEMINI_API_KEY")
     google_gemini_model: str = Field("gemini-2.5-flash-20240606", alias="GOOGLE_GEMINI_MODEL")
     lemonsqueezy_api_key: str | None = Field(None, alias="LEMONSQUEEZY_API_KEY")

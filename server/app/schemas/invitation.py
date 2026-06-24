@@ -35,3 +35,9 @@ class InvitationResponse(BaseModel):
     expires_at: datetime
     created_at: datetime
     accept_url: str | None = None
+    invited_user_exists: bool = False
+
+
+class InvitationWithOrgResponse(InvitationResponse):
+    organization_name: str = "Unknown Workspace"
+

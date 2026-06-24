@@ -7,6 +7,7 @@ import { useOrgStore } from '../../store/orgStore'
 import { LoginPage } from '../../pages/LoginPage'
 import { RegisterPage } from '../../pages/RegisterPage'
 import { ForgotPasswordPage } from '../../pages/ForgotPasswordPage'
+import { InvitationAcceptPage } from '../../pages/InvitationAcceptPage'
 
 // Protected Page imports
 import { DashboardPage } from '../../pages/DashboardPage'
@@ -87,6 +88,10 @@ export function AppRouter() {
             <ForgotPasswordPage />
           </PublicRoute>
         }
+      />
+      <Route
+        path="/invitations/accept"
+        element={<InvitationAcceptPage />}
       />
 
       <Route

@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../hooks/useAuth'
+import { acceptInvitation } from '../api/invitations'
+import { useUIStore } from '../store/uiStore'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -14,9 +16,12 @@ const schema = z.object({
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const inviteToken = searchParams.get('invite_token')
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState('')
   const { login } = useAuth()
+  const { addToast } = useUIStore()
 
   const {
     register,
@@ -28,6 +33,14 @@ export function LoginPage() {
     setServerError('')
     try {
       await login(data)
+      if (inviteToken) {
+        try {
+          await acceptInvitation({ token: inviteToken })
+          addToast('Invitation accepted!', 'success')
+        } catch (acceptError) {
+          addToast('Logged in successfully, but could not accept invitation.', 'warning')
+        }
+      }
       navigate('/dashboard')
     } catch (error) {
       setServerError(error.message)
