@@ -51,7 +51,7 @@ export function LoginPage() {
     <AuthLayout title="Welcome back" subtitle="Sign in to your Reportly account">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {serverError && (
-          <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {serverError}
           </div>
@@ -89,12 +89,12 @@ export function LoginPage() {
           {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
         </div>
 
-        <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-10 mt-2">
+        <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-9 mt-1">
           {isSubmitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-5 text-center text-xs text-zinc-500 dark:text-zinc-400">
         Don't have an account?{' '}
         <Link to="/register" className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
           Create account

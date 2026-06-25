@@ -107,23 +107,23 @@ export function UploadPage() {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">Ingest Business Data</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Upload customer transactions spreadsheet logs to automatically compile AI-assisted reports.
+        <h1 className="text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">Upload Data</h1>
+        <p className="text-sm text-zinc-500 mt-1.5">
+          Upload a spreadsheet to generate AI-assisted reports.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <div
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onDrop={handleDrop}
-            className={`card border-dashed flex flex-col items-center justify-center p-10 text-center transition-all min-h-[300px] select-none ${
+            className={`card border-dashed flex flex-col items-center justify-center p-10 text-center transition-all duration-200 min-h-[280px] select-none ${
               isDragActive
-                ? 'border-brand-500 bg-brand-50/10 dark:bg-brand-950/5'
-                : 'border-zinc-200 dark:border-zinc-800'
+                ? 'border-brand-400 dark:border-brand-500 bg-brand-50/20 dark:bg-brand-950/10 scale-[1.01]'
+                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
             }`}
           >
             <input
@@ -136,31 +136,31 @@ export function UploadPage() {
 
             {!file ? (
               <>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-400 mb-4">
-                  <Upload className="w-6 h-6 text-zinc-400" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-400 mb-4">
+                  <Upload className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-semibold text-zinc-850 dark:text-zinc-100">
+                <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
                   Drag and drop your spreadsheet here
                 </h3>
-                <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  Supports comma-separated values (CSV) or Microsoft Excel sheets (XLSX, XLS).
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  CSV, XLSX, or XLS files supported.
                 </p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="btn-primary h-9 mt-5 cursor-pointer"
+                  className="btn-secondary h-8 mt-4 text-xs"
                 >
                   Browse Files
                 </button>
               </>
             ) : (
-              <div className="w-full space-y-6">
-                <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-900/10 text-left">
+              <div className="w-full space-y-5">
+                <div className="flex items-center justify-between p-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-900/10 text-left">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400">
-                      <FileSpreadsheet className="w-5.5 h-5.5" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-950/30 text-brand-600 dark:text-brand-400">
+                      <FileSpreadsheet className="w-4 h-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-xs sm:max-w-md">
+                      <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate max-w-[200px] sm:max-w-md">
                         {file.name}
                       </p>
                       <p className="text-[10px] text-zinc-400 font-mono mt-0.5 uppercase">
@@ -221,37 +221,37 @@ export function UploadPage() {
                 )}
 
                 {uploadState === 'idle' && (
-                  <div className="flex items-center justify-end gap-3 pt-2">
+                  <div className="flex items-center justify-end gap-2 pt-1">
                     <button
                       onClick={handleClear}
-                      className="btn-secondary h-10 cursor-pointer"
+                      className="btn-secondary h-9 text-xs"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleUploadSubmit}
-                      className="btn-primary h-10 gap-1.5 cursor-pointer"
+                      className="btn-primary h-9 gap-1.5 text-xs"
                     >
                       Start Analysis
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
 
                 {uploadState === 'success' && (
-                  <div className="flex items-center justify-end gap-3 pt-2">
+                  <div className="flex items-center justify-end gap-2 pt-1">
                     <button
                       onClick={handleClear}
-                      className="btn-secondary h-10 cursor-pointer"
+                      className="btn-secondary h-9 text-xs"
                     >
                       Upload Another
                     </button>
                     <Link
                       to="/reports"
-                      className="btn-primary h-10 gap-1.5"
+                      className="btn-primary h-9 gap-1.5 text-xs"
                     >
-                      View Generated Reports
-                      <ArrowRight className="w-4 h-4" />
+                      View Reports
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 )}
@@ -260,39 +260,36 @@ export function UploadPage() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div className="card">
-            <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 mb-3">Ingestion Guide</h3>
-            <div className="space-y-4 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+            <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 mb-3 uppercase tracking-wider">Ingestion Guide</h3>
+            <div className="space-y-3 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
               <p>
-                To generate high fidelity telemetry, ensure your transaction spreadsheets contain columns for:
+                Ensure your spreadsheet contains columns for:
               </p>
               
-              <ul className="space-y-2.5 font-medium text-zinc-700 dark:text-zinc-300">
+              <ul className="space-y-2 font-medium text-zinc-700 dark:text-zinc-300">
                 <li className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Date / Timestamp</strong>: YYYY-MM-DD formats for sales splits.</span>
+                  <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
+                  <span><strong>Date</strong>: YYYY-MM-DD format</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Sales Value</strong>: Transaction amounts in standard floating numbers.</span>
+                  <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
+                  <span><strong>Sales Value</strong>: Transaction amounts</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Quantity</strong>: Numeric count of customer purchases.</span>
+                  <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
+                  <span><strong>Quantity</strong>: Item count</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Category</strong>: Classification tags for distribution metrics.</span>
+                  <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
+                  <span><strong>Category</strong>: Classification tags</span>
                 </li>
               </ul>
 
-              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5 leading-normal">
-                  <AlertCircle className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-                  <span>
-                    Spreadsheets with missing parameters will trigger processing warnings, but will still be parsed for baseline trends.
-                  </span>
+              <div className="border-t border-zinc-100 dark:border-zinc-800 pt-3 mt-3">
+                <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal">
+                  Missing columns will trigger warnings but data will still be parsed.
                 </p>
               </div>
             </div>

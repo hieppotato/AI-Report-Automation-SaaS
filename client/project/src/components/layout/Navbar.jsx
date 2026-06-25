@@ -79,12 +79,12 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 px-4 backdrop-blur-md transition-colors duration-200">
+    <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 px-4 backdrop-blur-md transition-colors duration-200">
       {/* Mobile open & Breadcrumbs */}
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 cursor-pointer transition-colors"
         >
           <Menu className="w-4 h-4" />
         </button>
@@ -107,15 +107,15 @@ export function Navbar() {
           <div className="relative" ref={orgRef}>
             <button
               onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer select-none"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer select-none"
             >
               <Building className="w-3.5 h-3.5 text-zinc-400" />
               <span className="max-w-[100px] truncate">{activeOrg.name}</span>
               <span className={cn(
-                "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider",
+                "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border uppercase tracking-wider",
                 activePlan === 'PRO'
-                  ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/20"
-                  : "bg-zinc-100 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-450 border-zinc-200 dark:border-zinc-800"
+                  ? "bg-brand-50 dark:bg-brand-950/30 text-brand-600 dark:text-brand-400 border-brand-200/50 dark:border-brand-800/40"
+                  : "bg-zinc-100 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
               )}>
                 {activePlan}
               </span>
@@ -145,10 +145,10 @@ export function Navbar() {
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="truncate">{org.name}</span>
                         <span className={cn(
-                          "inline-flex items-center px-1 py-0.5 rounded text-[8px] font-bold border uppercase tracking-wider flex-shrink-0",
+                          "inline-flex items-center px-1 py-0.5 rounded text-[8px] font-semibold border uppercase tracking-wider flex-shrink-0",
                           org.plan === 'pro'
-                            ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/20"
-                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-450 border-zinc-200 dark:border-zinc-800"
+                            ? "bg-brand-50 dark:bg-brand-950/30 text-brand-600 dark:text-brand-400 border-brand-200/50 dark:border-brand-800/40"
+                            : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
                         )}>
                           {org.plan === 'pro' ? 'PRO' : 'FREE'}
                         </span>
@@ -178,7 +178,7 @@ export function Navbar() {
         {/* Theme Toggler */}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-500 dark:text-zinc-400 cursor-pointer transition-colors"
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -189,7 +189,7 @@ export function Navbar() {
           <div className="relative" ref={userRef}>
             <button
               onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer select-none"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer select-none overflow-hidden"
             >
               {profile.avatarUrl ? (
                 <img

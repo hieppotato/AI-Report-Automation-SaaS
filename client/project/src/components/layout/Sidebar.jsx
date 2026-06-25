@@ -47,9 +47,9 @@ export function Sidebar() {
       )}
     >
       {/* Brand header */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex h-14 items-center justify-between px-4 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white font-bold text-sm">
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold text-xs">
             R
           </div>
           {sidebarOpen && (
@@ -64,7 +64,7 @@ export function Sidebar() {
         {sidebarOpen && (
           <button
             onClick={toggleSidebar}
-            className="hidden md:flex h-6 w-6 items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            className="hidden md:flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -72,17 +72,17 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1.5 px-3 py-4 overflow-y-auto">
+      <nav className="flex-1 space-y-1 px-2.5 py-3 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group relative",
+                "flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-150 group relative",
                 isActive
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-950 shadow-sm"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-950 dark:hover:text-zinc-50"
+                  : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-950 dark:hover:text-zinc-50"
               )
             }
           >
@@ -94,10 +94,10 @@ export function Sidebar() {
                     <span className="truncate">{item.name}</span>
                     {item.badge > 0 && (
                       <span className={cn(
-                        "ml-2 px-1.5 py-0.5 text-[9px] font-bold rounded-full font-mono shrink-0",
+                        "ml-2 px-1.5 py-0.5 text-[10px] font-semibold rounded-full font-mono shrink-0 min-w-[18px] text-center",
                         isActive
-                          ? "bg-brand-500 text-white dark:bg-brand-600"
-                          : "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                          ? "bg-brand-500 text-white"
+                          : "bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
                       )}>
                         {item.badge}
                       </span>
@@ -115,22 +115,22 @@ export function Sidebar() {
       </nav>
 
       {/* Sidebar Footer */}
-      <div className="p-3 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="p-2.5 border-t border-zinc-200 dark:border-zinc-800">
         {!sidebarOpen ? (
           <button
             onClick={toggleSidebar}
-            className="flex h-10 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 dark:border-zinc-800 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-200 cursor-pointer"
+            className="flex h-9 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         ) : (
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40 p-3">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40 p-2.5">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-brand-500 animate-pulse" />
-              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-50">AI Engine Active</span>
+              <Sparkles className="w-3.5 h-3.5 text-brand-500 animate-pulse-slow" />
+              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">AI Engine Active</span>
             </div>
-            <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
-              Reports automatically analyzed for anomalies.
+            <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Reports automatically analyzed.
             </p>
           </div>
         )}

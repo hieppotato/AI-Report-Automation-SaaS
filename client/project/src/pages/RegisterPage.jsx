@@ -55,23 +55,26 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title={inviteToken ? "Create your account to join" : "Create your account"} subtitle={inviteToken ? "You've been invited to join a workspace" : "Get started with Reportly today"}>
+    <AuthLayout
+      title={inviteToken ? 'Create your account to join' : 'Create your account'}
+      subtitle={inviteToken ? "You've been invited to join a workspace" : 'Begin your journey with Reportly today'}
+    >
       {inviteToken && (
-        <div className="mb-4 px-3.5 py-3 rounded-lg bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 text-sm">
+        <div className="mb-4 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-brand-950/30 border border-brand-200/50 dark:border-brand-800/40 text-brand-700 dark:text-brand-400 text-xs">
           You've been invited to join a workspace. Create an account to accept.
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {serverError && (
-          <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             {serverError}
           </div>
         )}
 
         <div>
           <label className="label">Full Name</label>
-          <input type="text" placeholder="John Doe" className="input" {...register('fullName')} />
+          <input type="text" placeholder="Alex Johnson" className="input" {...register('fullName')} />
           {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName.message}</p>}
         </div>
 
@@ -102,12 +105,12 @@ export function RegisterPage() {
           {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
         </div>
 
-        <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-10 mt-2">
+        <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-9 mt-1">
           {isSubmitting ? 'Creating account...' : inviteToken ? 'Create Account & Join' : 'Create account'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-5 text-center text-xs text-zinc-500 dark:text-zinc-400">
         Already have an account?{' '}
         <Link to={inviteToken ? `/login?invite_token=${inviteToken}` : "/login"} className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
           Sign in
