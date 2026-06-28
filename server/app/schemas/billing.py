@@ -15,6 +15,10 @@ class CheckoutResponse(BaseModel):
     checkout_url: str
 
 
+class CustomerPortalResponse(BaseModel):
+    portal_url: str
+
+
 class CurrentPlanResponse(BaseModel):
     organization_id: UUID
     plan: PlanName

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getCurrentPlan, createCheckout } from '../api/billing'
+import { getCurrentPlan, createCheckout, getCustomerPortalUrl } from '../api/billing'
 import { useOrgStore } from '../store/orgStore'
 import { useUIStore } from '../store/uiStore'
 import { useSearchParams } from 'react-router-dom'
@@ -17,13 +17,12 @@ export function useBilling() {
 
   const planQuery = useQuery({
     queryKey: ['billing-plan', orgId],
-    queryFn: () => getCurrentPlan(orgId).then((res) => res.data),
+    queryFn: () => getCurrentPlan(orgId),
     enabled: Boolean(orgId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     refetchInterval: isPolling ? 2000 : false,
   })
 
-  // Start polling when checkout=success is in URL and the plan is still 'free'
   useEffect(() => {
     if (isCheckoutSuccess && planQuery.data?.plan === 'free') {
       setIsPolling(true)
@@ -32,13 +31,10 @@ export function useBilling() {
     }
   }, [isCheckoutSuccess, planQuery.data?.plan])
 
-  // Clear query params and show success toast once plan switches to 'pro'
   useEffect(() => {
     if (isCheckoutSuccess && planQuery.data?.plan === 'pro') {
       addToast('Upgrade successful! Welcome to Pro.', 'success')
-      // Refresh organizations query to update local state (activeOrg, etc.)
       queryClient.invalidateQueries({ queryKey: ['organizations'] })
-      // Remove checkout query param
       const params = new URLSearchParams(searchParams)
       params.delete('checkout')
       setSearchParams(params, { replace: true })
@@ -46,7 +42,7 @@ export function useBilling() {
   }, [isCheckoutSuccess, planQuery.data?.plan, addToast, searchParams, setSearchParams, queryClient])
 
   const checkoutMutation = useMutation({
-    mutationFn: () => createCheckout(orgId).then((res) => res.data),
+    mutationFn: () => createCheckout(orgId),
     onSuccess: (data) => {
       if (data?.checkout_url) {
         addToast('Redirecting to LemonSqueezy secure checkout...', 'success')
@@ -60,6 +56,20 @@ export function useBilling() {
     }
   })
 
+  const portalMutation = useMutation({
+    mutationFn: () => getCustomerPortalUrl(orgId),
+    onSuccess: (data) => {
+      if (data?.portal_url) {
+        window.open(data.portal_url, '_blank')
+      } else {
+        addToast('Could not retrieve customer portal URL.', 'error')
+      }
+    },
+    onError: (err) => {
+      addToast(err?.response?.data?.detail || err.message || 'Failed to open customer portal.', 'error')
+    }
+  })
+
   return {
     plan: planQuery.data,
     isLoading: planQuery.isLoading,
@@ -70,6 +80,9 @@ export function useBilling() {
     
     upgradeToPro: checkoutMutation.mutateAsync,
     isUpgrading: checkoutMutation.isPending,
+
+    openCustomerPortal: portalMutation.mutateAsync,
+    isOpeningPortal: portalMutation.isPending,
   }
 }
 export default useBilling

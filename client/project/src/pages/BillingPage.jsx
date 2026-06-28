@@ -1,5 +1,5 @@
 import React from 'react'
-import { Check, CreditCard, Sparkles, Zap, Loader2, HelpCircle } from 'lucide-react'
+import { Check, CreditCard, Sparkles, Zap, Loader2, HelpCircle, ExternalLink, Settings } from 'lucide-react'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useBilling } from '../hooks/useBilling'
 import { useReports } from '../hooks/useReports'
@@ -9,7 +9,7 @@ import { useOrgStore } from '../store/orgStore'
 
 export function BillingPage() {
   const activeOrg = useOrgStore((state) => state.activeOrg)
-  const { plan: apiPlan, isLoading: planLoading, upgradeToPro, isUpgrading, isPolling } = useBilling()
+  const { plan: apiPlan, isLoading: planLoading, upgradeToPro, isUpgrading, isPolling, openCustomerPortal, isOpeningPortal } = useBilling()
   const { data: reportsResult } = useReports()
   const { data: membersResult } = useMembers()
   const { data: uploadsResult } = useUploads()
@@ -17,12 +17,10 @@ export function BillingPage() {
   const reportCount = reportsResult?.items?.length || 0
   const memberCount = membersResult?.items?.length || 0
 
-  // Calculate storage usage
   const uploadsList = uploadsResult?.items || []
   const storageUsedBytes = uploadsList.reduce((acc, item) => acc + (item.size_bytes || 0), 0)
   const storageUsedMB = parseFloat((storageUsedBytes / (1024 * 1024)).toFixed(2))
 
-  // Standardize plan active state from API or store fallback
   const activePlanName = (apiPlan?.plan || activeOrg?.plan || 'free').toLowerCase()
   const isPro = activePlanName === 'pro'
 
@@ -42,6 +40,14 @@ export function BillingPage() {
       } catch (err) {
         // handled in hook
       }
+    }
+  }
+
+  const handleManageSubscription = async () => {
+    try {
+      await openCustomerPortal()
+    } catch (err) {
+      // handled in hook
     }
   }
 
@@ -167,7 +173,6 @@ export function BillingPage() {
         <p className="text-sm text-zinc-500 mt-1">Govern subscription metrics, track usage quotas, and manage plan tiers.</p>
       </div>
 
-      {/* Checkout Polling Banner */}
       {isPolling && (
         <div className="mb-6 p-4 rounded-xl border border-brand-500/25 bg-brand-500/5 text-brand-700 dark:text-brand-400 flex items-start gap-3 text-xs leading-normal animate-in fade-in slide-in-from-top-2 duration-255">
           <Loader2 className="w-4 h-4 animate-spin shrink-0 text-brand-650 dark:text-brand-500 mt-0.5" />
@@ -180,7 +185,6 @@ export function BillingPage() {
         </div>
       )}
 
-      {/* Current Plan & Details */}
       {!apiPlan || activePlanName === 'free' ? (
         <div className="card border border-dashed border-zinc-250 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 mb-8 text-center flex flex-col items-center justify-center py-8">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 text-zinc-400 dark:text-zinc-500 mb-3.5">
@@ -226,33 +230,51 @@ export function BillingPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-6 text-left sm:text-right border-t sm:border-t-0 border-zinc-100 dark:border-zinc-905 pt-4 sm:pt-0">
-              <div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
-                  Provider
-                </span>
-                <span className="text-xs font-semibold text-zinc-750 dark:text-zinc-350 capitalize mt-1 block">
-                  {apiPlan.provider || 'LemonSqueezy'}
-                </span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-left sm:text-right">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
+                    Provider
+                  </span>
+                  <span className="text-xs font-semibold text-zinc-750 dark:text-zinc-350 capitalize mt-1 block">
+                    {apiPlan.provider || 'LemonSqueezy'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
+                    {apiPlan.status === 'cancelled' ? 'Access Ends At' : 'Renewal Date'}
+                  </span>
+                  <span className="text-xs font-semibold text-zinc-750 dark:text-zinc-350 mt-1 block">
+                    {apiPlan.renewal_at
+                      ? new Date(apiPlan.renewal_at).toLocaleDateString(undefined, { dateStyle: 'medium' })
+                      : 'N/A'}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
-                  {apiPlan.status === 'cancelled' ? 'Access Ends At' : 'Renewal Date'}
-                </span>
-                <span className="text-xs font-semibold text-zinc-750 dark:text-zinc-350 mt-1 block">
-                  {apiPlan.renewal_at
-                    ? new Date(apiPlan.renewal_at).toLocaleDateString(undefined, { dateStyle: 'medium' })
-                    : 'N/A'}
-                </span>
-              </div>
+              <button
+                onClick={handleManageSubscription}
+                disabled={isOpeningPortal}
+                className="btn-secondary h-9 gap-1.5 cursor-pointer text-xs justify-center whitespace-nowrap"
+              >
+                {isOpeningPortal ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <Settings className="w-3.5 h-3.5" />
+                    Manage Subscription
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Usage Quotas Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Reports Ingestion Quota */}
         <div className="card">
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
@@ -275,7 +297,6 @@ export function BillingPage() {
           </div>
         </div>
 
-        {/* Storage Space Quota */}
         <div className="card">
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
@@ -298,7 +319,6 @@ export function BillingPage() {
           </div>
         </div>
 
-        {/* Workspace Seat Quota */}
         <div className="card">
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
@@ -322,7 +342,6 @@ export function BillingPage() {
         </div>
       </div>
 
-      {/* Pricing Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         {plans.map((plan) => (
           <div
@@ -360,32 +379,51 @@ export function BillingPage() {
             </div>
 
             <div className="pt-6 mt-6 border-t border-zinc-100 dark:border-zinc-900">
-              <button
-                onClick={() => handleUpgrade(plan.name.toLowerCase())}
-                disabled={plan.current || isUpgrading}
-                className={
-                  plan.current
-                    ? 'btn-secondary w-full h-10 select-none bg-zinc-50 dark:bg-zinc-900/60 font-semibold cursor-not-allowed text-xs'
-                    : 'btn-primary w-full h-10 cursor-pointer text-xs justify-center gap-2'
-                }
-              >
-                {isUpgrading && plan.name === 'Pro' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
-                    Creating Checkout...
-                  </>
-                ) : plan.current ? (
-                  'Active Plan'
-                ) : (
-                  plan.cta
-                )}
-              </button>
+              {plan.current && isPro ? (
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={isOpeningPortal}
+                  className="btn-secondary w-full h-10 cursor-pointer text-xs justify-center gap-2"
+                >
+                  {isOpeningPortal ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Settings className="w-4 h-4" />
+                      Manage Subscription
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleUpgrade(plan.name.toLowerCase())}
+                  disabled={plan.current || isUpgrading}
+                  className={
+                    plan.current
+                      ? 'btn-secondary w-full h-10 select-none bg-zinc-50 dark:bg-zinc-900/60 font-semibold cursor-not-allowed text-xs'
+                      : 'btn-primary w-full h-10 cursor-pointer text-xs justify-center gap-2'
+                  }
+                >
+                  {isUpgrading && plan.name === 'Pro' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+                      Creating Checkout...
+                    </>
+                  ) : plan.current ? (
+                    'Active Plan'
+                  ) : (
+                    plan.cta
+                  )}
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Pricing Comparison Table */}
       <div className="card p-0 overflow-hidden">
         <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10">
           <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2">

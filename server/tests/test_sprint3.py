@@ -125,6 +125,8 @@ class FakeOrganizationRepo:
 
 
 class FakeHttpResponse:
+    status_code = 200
+
     def raise_for_status(self) -> None:
         return None
 
@@ -278,6 +280,7 @@ def test_lemonsqueezy_webhook_updates_plan(monkeypatch) -> None:
     assert repo.updated_plan == "pro"
     assert repo.subscription["provider"] == "lemonsqueezy"
     assert repo.subscription["renewal_at"] == "2026-07-01T00:00:00Z"
+    assert repo.subscription["stripe_subscription_id"] == "sub_123"
 
 
 def test_lemonsqueezy_cancelled_webhook_sets_free(monkeypatch) -> None:
@@ -297,6 +300,65 @@ def test_lemonsqueezy_cancelled_webhook_sets_free(monkeypatch) -> None:
     service.process_webhook(payload, signature)
     assert repo.updated_plan == "free"
     assert repo.subscription["plan"] == "free"
+
+
+def test_lemonsqueezy_paused_webhook_sets_free(monkeypatch) -> None:
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_api_key", "test-key", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_store_id", "1", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_variant_id", "2", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_webhook_secret", "secret", raising=False)
+    repo = FakeBillingRepo()
+    service = BillingService(repo, FakeOrganizationRepo(role="owner"))
+    payload = json.dumps(
+        {
+            "meta": {"event_name": "subscription_paused", "custom_data": {"organization_id": str(ORG_ID)}},
+            "data": {"id": "sub_123", "attributes": {"status": "paused", "renews_at": "2026-07-15T00:00:00Z"}},
+        }
+    ).encode("utf-8")
+    signature = hmac.new(b"secret", payload, hashlib.sha256).hexdigest()
+    result = service.process_webhook(payload, signature)
+    assert result == {"received": True}
+    assert repo.updated_plan == "free"
+    assert repo.subscription["status"] == "paused"
+
+
+def test_lemonsqueezy_resumed_webhook_sets_pro(monkeypatch) -> None:
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_api_key", "test-key", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_store_id", "1", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_variant_id", "2", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_webhook_secret", "secret", raising=False)
+    repo = FakeBillingRepo()
+    service = BillingService(repo, FakeOrganizationRepo(role="owner"))
+    payload = json.dumps(
+        {
+            "meta": {"event_name": "subscription_resumed", "custom_data": {"organization_id": str(ORG_ID)}},
+            "data": {"id": "sub_123", "attributes": {"status": "active", "renews_at": "2026-08-01T00:00:00Z"}},
+        }
+    ).encode("utf-8")
+    signature = hmac.new(b"secret", payload, hashlib.sha256).hexdigest()
+    result = service.process_webhook(payload, signature)
+    assert result == {"received": True}
+    assert repo.updated_plan == "pro"
+    assert repo.subscription["status"] == "active"
+
+
+def test_webhook_ignores_missing_organization_id(monkeypatch) -> None:
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_api_key", "test-key", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_store_id", "1", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_variant_id", "2", raising=False)
+    monkeypatch.setattr("app.services.billing_service.settings.lemonsqueezy_webhook_secret", "secret", raising=False)
+    repo = FakeBillingRepo()
+    service = BillingService(repo, FakeOrganizationRepo(role="owner"))
+    payload = json.dumps(
+        {
+            "meta": {"event_name": "subscription_created", "custom_data": {}},
+            "data": {"id": "sub_123", "attributes": {"status": "active"}},
+        }
+    ).encode("utf-8")
+    signature = hmac.new(b"secret", payload, hashlib.sha256).hexdigest()
+    result = service.process_webhook(payload, signature)
+    assert result == {"received": True, "ignored": True}
+    assert repo.subscription is None
 
 
 def test_gemini_json_recovery_and_retry(monkeypatch) -> None:

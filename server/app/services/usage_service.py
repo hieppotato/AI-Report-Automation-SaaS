@@ -5,9 +5,12 @@ from app.core.exceptions import NotFoundError, PlanLimitError, QuotaExceededErro
 from app.repositories.usage_repo import UsageRepository
 from app.schemas.usage import UsageCurrentResponse
 
-FREE_REPORTS_LIMIT = 5
-FREE_STORAGE_LIMIT_MB = 50
-PRO_STORAGE_LIMIT_MB = 1024
+FREE_REPORTS_LIMIT = 3
+FREE_STORAGE_LIMIT_MB = 10
+FREE_SEATS_LIMIT = 1
+PRO_REPORTS_LIMIT = 100
+PRO_STORAGE_LIMIT_MB = 100
+PRO_SEATS_LIMIT = 5
 
 
 class UsageService:
@@ -30,14 +33,21 @@ class UsageService:
         if self._plan_for_org(organization_id) == "pro":
             return
         if self._reports_this_month(organization_id) >= FREE_REPORTS_LIMIT:
-            raise QuotaExceededError("Free plan allows up to 5 reports per month.")
+            raise QuotaExceededError("Free plan allows up to 3 reports per month.")
 
     def enforce_storage_upload(self, organization_id: UUID, incoming_size_bytes: int) -> None:
         plan = self._plan_for_org(organization_id)
         limit_mb = PRO_STORAGE_LIMIT_MB if plan == "pro" else FREE_STORAGE_LIMIT_MB
         limit_bytes = limit_mb * 1024 * 1024
         if self.repo.sum_storage_bytes(organization_id) + incoming_size_bytes > limit_bytes:
-            raise QuotaExceededError(f"{plan.title()} plan storage limit exceeded.")
+            raise QuotaExceededError(f"{plan.title()} plan storage limit of {limit_mb}MB exceeded.")
+
+    def enforce_seat_limit(self, organization_id: UUID) -> None:
+        plan = self._plan_for_org(organization_id)
+        limit = PRO_SEATS_LIMIT if plan == "pro" else FREE_SEATS_LIMIT
+        current_count = self.repo.count_members(organization_id)
+        if current_count >= limit:
+            raise QuotaExceededError(f"{plan.title()} plan allows up to {limit} seats.")
 
     def enforce_export_format(self, organization_id: UUID, export_format: str) -> None:
         if export_format == "docx" and self._plan_for_org(organization_id) != "pro":

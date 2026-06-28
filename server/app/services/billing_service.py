@@ -28,6 +28,7 @@ class BillingService:
 
     def create_checkout_url(self, organization_id: UUID, user_email: str | None) -> CheckoutResponse:
         self._require_lemonsqueezy_config()
+        is_test_mode = settings.app_env == "development"
         payload = {
             "data": {
                 "type": "checkouts",
@@ -39,6 +40,7 @@ class BillingService:
                     "product_options": {
                         "redirect_url": f"{settings.app_frontend_url.rstrip('/')}/billing?checkout=success",
                     },
+                    "test_mode": is_test_mode,
                 },
                 "relationships": {
                     "store": {
@@ -61,9 +63,23 @@ class BillingService:
                 json=payload,
                 timeout=20,
             )
-            response.raise_for_status()
         except httpx.HTTPError as exc:
-            raise AppError("Failed to create LemonSqueezy checkout.", status_code=502, code="billing_provider_error") from exc
+            raise AppError(f"Network error calling LemonSqueezy: {exc}", status_code=502, code="billing_provider_error") from exc
+
+        if response.status_code >= 400:
+            error_detail = response.text
+            try:
+                error_body = response.json()
+                errors = error_body.get("errors") or []
+                if errors:
+                    error_detail = "; ".join(e.get("detail", str(e)) for e in errors)
+            except Exception:
+                pass
+            raise AppError(
+                f"LemonSqueezy API error ({response.status_code}): {error_detail}",
+                status_code=502,
+                code="billing_provider_error",
+            )
 
         checkout = response.json()
         checkout_url = ((checkout.get("data") or {}).get("attributes") or {}).get("url")
@@ -85,27 +101,102 @@ class BillingService:
         renewal_at = None
         if subscription:
             renewal_at = self._parse_timestamp(subscription.get("renewal_at") or subscription.get("current_period_end"))
+        plan_from_db = "pro" if (organization.get("plan") or "").lower() == "pro" else "free"
+
+        if plan_from_db == "free" and subscription and subscription.get("stripe_subscription_id"):
+            self._sync_subscription_from_provider(organization_id, subscription)
+
+        subscription = self.billing_repo.get_subscription(organization_id)
+        if subscription:
+            renewal_at = self._parse_timestamp(subscription.get("renewal_at") or subscription.get("current_period_end"))
+            plan_from_db = "pro" if (organization.get("plan") or "").lower() == "pro" else "free"
+
         return CurrentPlanResponse(
             organization_id=organization_id,
-            plan="pro" if (organization.get("plan") or "").lower() == "pro" else "free",
+            plan=plan_from_db,
             status=subscription.get("status") if subscription else None,
             renewal_at=renewal_at,
             provider=(subscription.get("provider") if subscription else None) or "lemonsqueezy",
         )
 
+    def _sync_subscription_from_provider(self, organization_id: UUID, subscription: dict[str, Any]) -> None:
+        external_id = subscription.get("stripe_subscription_id")
+        if not external_id or not settings.lemonsqueezy_configured:
+            return
+        try:
+            response = httpx.get(
+                f"https://api.lemonsqueezy.com/v1/subscriptions/{external_id}",
+                headers={
+                    "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
+                    "Accept": "application/vnd.api+json",
+                },
+                timeout=15,
+            )
+            if response.status_code != 200:
+                return
+            data = response.json().get("data") or {}
+            attrs = data.get("attributes") or {}
+            status = attrs.get("status") or "inactive"
+            is_active = status in {"active", "on_trial"}
+            plan = "pro" if is_active else "free"
+            renewal_at = attrs.get("renews_at") or attrs.get("ends_at")
+
+            self.billing_repo.upsert_subscription(
+                organization_id,
+                {
+                    "provider": "lemonsqueezy",
+                    "plan": plan,
+                    "status": status,
+                    "renewal_at": renewal_at,
+                    "current_period_end": renewal_at,
+                },
+            )
+            self.billing_repo.update_organization_plan(organization_id, plan)
+        except Exception:
+            pass
+
     def get_current_plan_for_user(self, organization_id: UUID, user_id: UUID) -> CurrentPlanResponse:
         self._require_membership(organization_id, user_id)
         return self.get_current_plan(organization_id)
+
+    def get_customer_portal_url(self, organization_id: UUID, user_id: UUID) -> str:
+        self._require_membership(organization_id, user_id)
+        subscription = self.billing_repo.get_subscription(organization_id)
+        if not subscription or subscription.get("plan") != "pro":
+            raise AppError("No active Pro subscription found.", status_code=404, code="no_active_subscription")
+        external_id = subscription.get("stripe_subscription_id")
+        if not external_id:
+            raise AppError("Subscription ID not found. Please contact support.", status_code=404, code="subscription_id_missing")
+        self._require_lemonsqueezy_config()
+        try:
+            response = httpx.get(
+                f"https://api.lemonsqueezy.com/v1/subscriptions/{external_id}",
+                headers={
+                    "Authorization": f"Bearer {settings.lemonsqueezy_api_key}",
+                    "Accept": "application/vnd.api+json",
+                },
+                timeout=20,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            raise AppError("Failed to retrieve subscription details.", status_code=502, code="billing_provider_error") from exc
+        sub_data = response.json()
+        portal_url = ((sub_data.get("data") or {}).get("attributes") or {}).get("urls", {}).get("customer_portal")
+        if not portal_url:
+            raise AppError("Customer portal URL not available.", status_code=502, code="billing_provider_error")
+        return portal_url
 
     def process_webhook(self, payload: bytes, signature: str | None) -> dict[str, Any]:
         self._require_lemonsqueezy_config()
         self._verify_signature(payload, signature)
         event = json.loads(payload.decode("utf-8"))
-        event_name = (event.get("meta") or {}).get("event_name")
+        meta = event.get("meta") or {}
+        event_name = meta.get("event_name")
         data = event.get("data") or {}
         attributes = data.get("attributes") or {}
-        custom = (attributes.get("custom_data") or attributes.get("checkout_data") or {}).get("custom") or attributes.get("custom_data") or {}
-        organization_id = custom.get("organization_id") or (event.get("meta") or {}).get("custom_data", {}).get("organization_id")
+
+        custom_data = meta.get("custom_data") or {}
+        organization_id = custom_data.get("organization_id")
         if not organization_id:
             return {"received": True, "ignored": True}
 
@@ -118,11 +209,16 @@ class BillingService:
         elif event_name == "subscription_cancelled":
             renewal_at = attributes.get("ends_at") or attributes.get("renews_at")
             self._update_subscription(UUID(str(organization_id)), "free", attributes.get("status") or "cancelled", renewal_at, data)
+        elif event_name == "subscription_paused":
+            renewal_at = attributes.get("renews_at") or attributes.get("ends_at")
+            self._update_subscription(UUID(str(organization_id)), "free", "paused", renewal_at, data)
+        elif event_name == "subscription_resumed":
+            renewal_at = attributes.get("renews_at") or attributes.get("trial_ends_at")
+            self._update_subscription(UUID(str(organization_id)), "pro", "active", renewal_at, data)
         return {"received": True}
 
     def _update_subscription(self, organization_id: UUID, plan: str, status: str, renewal_at: Any, data: dict[str, Any]) -> None:
         external_id = data.get("id")
-        attributes = data.get("attributes") or {}
         self.billing_repo.upsert_subscription(
             organization_id,
             {
@@ -131,17 +227,19 @@ class BillingService:
                 "status": status,
                 "renewal_at": renewal_at,
                 "current_period_end": renewal_at,
+                "stripe_subscription_id": str(external_id) if external_id else None,
             },
         )
         self.billing_repo.update_organization_plan(organization_id, plan)
-        if self.audit_service and plan == "pro":
+        if self.audit_service:
+            event_type = "billing.upgraded" if plan == "pro" else "billing.downgraded"
             self.audit_service.log_event(
                 organization_id,
                 None,
-                "billing.upgraded",
+                event_type,
                 "subscription",
-                str(data.get("id") or ""),
-                {"provider": "lemonsqueezy", "status": status},
+                str(external_id or ""),
+                {"provider": "lemonsqueezy", "status": status, "plan": plan},
             )
 
     def _verify_signature(self, payload: bytes, signature: str | None) -> None:

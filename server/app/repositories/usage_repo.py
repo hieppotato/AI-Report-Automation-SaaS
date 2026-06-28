@@ -47,3 +47,13 @@ class UsageRepository:
         )
         rows = response.data or []
         return rows[0] if rows else None
+
+    def count_members(self, organization_id: UUID) -> int:
+        response = execute_query(
+            lambda: self.supabase.table("organization_members")
+            .select("user_id", count="exact")
+            .eq("organization_id", str(organization_id))
+            .execute(),
+            "Failed to count organization members",
+        )
+        return response_count(response)
