@@ -174,7 +174,15 @@ class BillingService:
 
         logger.info("Fetching customer portal URL for subscription %s (org=%s)", external_id, organization_id)
 
-        sub_attrs = self._fetch_subscription_attrs(external_id)
+        try:
+            sub_attrs = self._fetch_subscription_attrs(external_id)
+        except AppError:
+            self._handle_subscription_not_found(organization_id, subscription)
+            raise AppError(
+                "Your subscription is no longer active. Please subscribe again.",
+                status_code=402, code="subscription_expired",
+            )
+
         portal_url = (sub_attrs.get("urls") or {}).get("customer_portal")
 
         if not portal_url:
@@ -185,6 +193,23 @@ class BillingService:
             raise AppError("Customer portal URL not available.", status_code=502, code="billing_provider_error")
 
         return portal_url
+
+    def _handle_subscription_not_found(self, organization_id: UUID, subscription: dict[str, Any]) -> None:
+        logger.warning(
+            "Subscription %s not found on LemonSqueezy. Downgrading org %s to free plan.",
+            subscription.get("stripe_subscription_id"), organization_id,
+        )
+        self.billing_repo.upsert_subscription(
+            organization_id,
+            {
+                "provider": "lemonsqueezy",
+                "plan": "free",
+                "status": "expired",
+                "renewal_at": None,
+                "current_period_end": None,
+            },
+        )
+        self.billing_repo.update_organization_plan(organization_id, "free")
 
     def _fetch_subscription_attrs(self, external_id: str) -> dict[str, Any]:
         headers = {

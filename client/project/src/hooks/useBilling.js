@@ -66,7 +66,8 @@ export function useBilling() {
       }
     },
     onError: (err) => {
-      addToast(err?.response?.data?.detail || err.message || 'Failed to open customer portal.', 'error')
+      addToast(err.message || 'Failed to open customer portal.', 'error')
+      planQuery.refetch()
     }
   })
 
