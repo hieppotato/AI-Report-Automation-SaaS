@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: ai-report-api
+    runtime: python@3.10
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_JWT_AUDIENCE
+        value: authenticated
+      - key: SUPABASE_STORAGE_BUCKET
+        value: raw-csv
+      - key: GENERATED_REPORTS_BUCKET
+        value: generated-reports
+      - key: GOOGLE_GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: LEMONSQUEEZY_API_KEY
+        sync: false
+      - key: LEMONSQUEEZY_STORE_ID
+        sync: false
+      - key: LEMONSQUEEZY_VARIANT_ID
+        sync: false
+      - key: LEMONSQUEEZY_WEBHOOK_SECRET
+        sync: false
+      - key: APP_FRONTEND_URL
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        value: https://ai-report-automation-saa-s.vercel.app
+      - key: LOG_LEVEL
+        value: INFO

@@ -33,24 +33,37 @@ export function RegisterPage() {
   const onSubmit = async (data) => {
     setServerError('')
     try {
-      await registerAccount(data)
+      const result = await registerAccount(data)
 
       if (inviteToken) {
-        await login({ email: data.email, password: data.password })
-        try {
-          await acceptInvitation({ token: inviteToken })
-          addToast('Account created and invitation accepted!', 'success')
-          navigate('/dashboard', { replace: true })
-        } catch (acceptError) {
-          // Redirect to accept page so user sees a proper error state with context
-          navigate(`/invitations/accept?token=${inviteToken}`, { replace: true })
+        if (result.session) {
+          try {
+            await acceptInvitation({ token: inviteToken })
+            addToast('Account created and invitation accepted!', 'success')
+            navigate('/dashboard', { replace: true })
+          } catch (acceptError) {
+            navigate(`/invitations/accept?token=${inviteToken}`, { replace: true })
+          }
+        } else {
+          addToast('Please confirm your email first, then accept the invitation.', 'info')
+          navigate('/login')
         }
       } else {
-        addToast('Registration successful. Please check your email.', 'success')
-        navigate('/login')
+        if (result.session) {
+          addToast('Registration successful!', 'success')
+          navigate('/dashboard')
+        } else {
+          addToast('Registration successful. Please check your email to confirm.', 'success')
+          navigate('/login')
+        }
       }
     } catch (error) {
-      setServerError(error.message)
+      const msg = error.message || ''
+      if (msg.includes('already registered') || msg.includes('already exists')) {
+        setServerError('An account with this email already exists. Please sign in instead.')
+      } else {
+        setServerError(msg)
+      }
     }
   }
 

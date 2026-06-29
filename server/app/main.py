@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
                 "supabase_url": bool(settings.supabase_url),
                 "supabase_service_role_key": bool(settings.supabase_service_role_key),
                 "jwt_secret": bool(settings.supabase_jwt_secret or settings.jwt_secret),
+                "jwks_url": bool(settings.supabase_url),
                 "source_storage_bucket": bool(settings.supabase_storage_bucket),
                 "generated_reports_bucket": bool(settings.generated_reports_bucket),
                 "gemini": bool(settings.google_gemini_api_key),

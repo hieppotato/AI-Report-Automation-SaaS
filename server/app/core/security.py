@@ -1,7 +1,10 @@
+import time
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import Any
 from uuid import UUID
 
+import httpx
 import jwt
 from fastapi import HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials
@@ -36,12 +39,45 @@ def _decode_without_verification(token: str) -> dict[str, Any]:
         return {}
 
 
+@lru_cache(maxsize=1)
+def _fetch_jwks() -> dict[str, Any]:
+    try:
+        resp = httpx.get(settings.supabase_jwks_url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception:
+        return {"keys": []}
+
+
+def _get_signing_key(jwks: dict[str, Any], token: str) -> Any:
+    unverified_header = jwt.get_unverified_header(token)
+    kid = unverified_header.get("kid")
+    alg = unverified_header.get("alg", "ES256")
+
+    for key_data in jwks.get("keys", []):
+        if kid and key_data.get("kid") == kid:
+            return jwt.algorithms.ECAlgorithm.from_jwk(key_data)
+
+    raise _unauthorized("Unable to find matching signing key.")
+
+
 def verify_supabase_jwt_locally(token: str) -> dict[str, Any]:
+    jwks = _fetch_jwks()
+    if not jwks.get("keys"):
+        raise _unauthorized("No signing keys available.")
+
+    try:
+        signing_key = _get_signing_key(jwks, token)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _unauthorized("Failed to resolve signing key.") from exc
+
     try:
         return jwt.decode(
             token,
-            settings.jwt_verification_secret,
-            algorithms=["HS256"],
+            signing_key,
+            algorithms=["ES256", "RS256"],
             audience=settings.supabase_jwt_audience,
             options={"require": ["sub", "exp"]},
         )
@@ -51,8 +87,8 @@ def verify_supabase_jwt_locally(token: str) -> dict[str, Any]:
         try:
             return jwt.decode(
                 token,
-                settings.jwt_verification_secret,
-                algorithms=["HS256"],
+                signing_key,
+                algorithms=["ES256", "RS256"],
                 options={"require": ["sub", "exp"], "verify_aud": False},
             )
         except jwt.InvalidTokenError as exc:

@@ -55,11 +55,13 @@ class Settings(BaseSettings):
         return self.backend_cors_origins
 
     @property
-    def jwt_verification_secret(self) -> str:
-        secret = self.supabase_jwt_secret or self.jwt_secret
-        if not secret:
-            raise RuntimeError("SUPABASE_JWT_SECRET or JWT_SECRET must be configured.")
-        return secret
+    def supabase_jwks_url(self) -> str:
+        base = self.supabase_url.rstrip("/")
+        return f"{base}/auth/v1/.well-known/jwks.json"
+
+    @property
+    def jwt_verification_secret(self) -> str | None:
+        return self.supabase_jwt_secret or self.jwt_secret
 
     @property
     def lemonsqueezy_configured(self) -> bool:
