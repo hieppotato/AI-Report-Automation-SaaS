@@ -80,6 +80,9 @@ class FakeBillingRouteService:
             "provider": "lemonsqueezy",
         }
 
+    def get_customer_portal_url(self, organization_id: UUID, user_id: UUID):
+        return "https://billing.lemonsqueezy.test/portal"
+
     def process_webhook(self, payload: bytes, signature: str | None):
         if signature != "valid":
             raise AppError("Invalid LemonSqueezy webhook signature.", status_code=400, code="invalid_webhook_signature")
