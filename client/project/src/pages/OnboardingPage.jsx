@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useCreateOrganization } from '../hooks/useOrganizations'
 import { useUIStore } from '../store/uiStore'
@@ -13,6 +14,7 @@ const schema = z.object({
 })
 
 export function OnboardingPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { addToast } = useUIStore()
   const createOrganization = useCreateOrganization()
@@ -63,7 +65,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <AuthLayout title="Create your workspace" subtitle="Set up an organization to start automating reports">
+    <AuthLayout title={t('onboarding.createWorkspace')} subtitle={t('onboarding.createWorkspaceSubtitle')}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {errors.root && (
           <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 px-3.5 py-3 text-sm text-red-700 dark:text-red-400">
@@ -72,28 +74,28 @@ export function OnboardingPage() {
         )}
 
         <div>
-          <label className="label">Workspace Name</label>
-          <input type="text" placeholder="e.g. Acme Corp" className="input" {...register('name')} onChange={handleNameChange} />
+          <label className="label">{t('onboarding.workspaceName')}</label>
+          <input type="text" placeholder={t('onboarding.workspaceNamePlaceholder')} className="input" {...register('name')} onChange={handleNameChange} />
           {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="label">Workspace Slug</label>
+          <label className="label">{t('onboarding.workspaceSlug')}</label>
           <div className="relative flex items-center">
-            <span className="absolute left-3 text-sm text-zinc-400 dark:text-zinc-500 select-none">reportly.ai/</span>
-            <input type="text" placeholder="acme-corp" className="input pl-24" {...register('slug')} />
+            <span className="absolute left-3 text-sm text-zinc-400 dark:text-zinc-500 select-none">{t('onboarding.slugPrefix')}</span>
+            <input type="text" placeholder={t('onboarding.slugPlaceholder')} className="input pl-24" {...register('slug')} />
           </div>
           {errors.slug ? (
             <p className="mt-1 text-xs text-red-500">{errors.slug.message}</p>
           ) : (
             <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
-              This is your organization's unique URL identifier.
+              {t('onboarding.slugHint')}
             </p>
           )}
         </div>
 
         <button type="submit" disabled={isSubmitting || createOrganization.isPending} className="btn-primary w-full h-10 mt-2">
-          {isSubmitting || createOrganization.isPending ? 'Creating workspace...' : 'Create workspace'}
+          {isSubmitting || createOrganization.isPending ? t('onboarding.creatingWorkspace') : t('onboarding.createWorkspaceBtn')}
         </button>
       </form>
     </AuthLayout>

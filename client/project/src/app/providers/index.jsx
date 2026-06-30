@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
 })
 
 export const AppProviders = ({ children }) => {
+  const { t } = useTranslation()
   const { setSession, setProfile, loading } = useAuthStore()
   const { setOrganizations, clearOrganizations, setLoading: setOrgLoading } = useOrgStore()
 
@@ -69,7 +71,7 @@ export const AppProviders = ({ children }) => {
       <div className="flex h-screen w-screen items-center justify-center bg-zinc-950 text-zinc-100">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-          <p className="text-sm font-medium text-zinc-400">Verifying session…</p>
+          <p className="text-sm font-medium text-zinc-400">{t('auth.verifyingSession')}</p>
         </div>
       </div>
     )

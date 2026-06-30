@@ -16,6 +16,8 @@ import { useAuthStore } from '../../store/authStore'
 import { useOrgStore } from '../../store/orgStore'
 import { cn } from '../../lib/utils'
 import { useBilling } from '../../hooks/useBilling'
+import { LanguageSwitcher } from './LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
 
 export function Navbar() {
   const location = useLocation()
@@ -25,6 +27,7 @@ export function Navbar() {
   const { organizations, activeOrg, setActiveOrg } = useOrgStore()
   const { plan: billingPlan } = useBilling()
   const activePlan = (billingPlan?.plan || activeOrg?.plan || 'free').toUpperCase()
+  const { t } = useTranslation()
 
   // Dropdown states
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false)
@@ -94,7 +97,7 @@ export function Navbar() {
             to="/dashboard"
             className="hover:text-zinc-950 dark:hover:text-zinc-100 transition-colors"
           >
-            Home
+            {t('nav.home')}
           </Link>
           {breadcrumbs}
         </div>
@@ -125,7 +128,7 @@ export function Navbar() {
             {orgDropdownOpen && (
               <div className="absolute right-0 mt-1.5 w-52 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-1.5 shadow-lg animate-in fade-in slide-in-from-top-1 duration-100">
                 <div className="px-2.5 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                  Workspaces
+                  {t('nav.workspaces')}
                 </div>
                 <div className="space-y-0.5 mt-1">
                   {organizations.map((org) => (
@@ -168,12 +171,14 @@ export function Navbar() {
                   className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/20 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Create Workspace
+                  {t('nav.createWorkspace')}
                 </button>
               </div>
             )}
           </div>
         )}
+
+        <LanguageSwitcher />
 
         {/* Theme Toggler */}
         <button
@@ -222,14 +227,14 @@ export function Navbar() {
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors"
                   >
                     <User className="w-4 h-4 text-zinc-400" />
-                    My Profile
+                    {t('nav.myProfile')}
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 text-red-500" />
-                    Sign out
+                    {t('nav.signOut')}
                   </button>
                 </div>
               </div>

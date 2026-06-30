@@ -17,9 +17,11 @@ import { useUIStore } from '../../store/uiStore'
 import { cn } from '../../lib/utils'
 import { useInvitations } from '../../hooks/useMembers'
 import { useReports } from '../../hooks/useReports'
+import { useTranslation } from 'react-i18next'
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUIStore()
+  const { t } = useTranslation()
 
   // Queries for badge counts
   const { data: invitations = [] } = useInvitations()
@@ -29,14 +31,14 @@ export function Sidebar() {
   const processingCount = reportsResult?.items?.filter(r => r.status === 'processing').length || 0
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Reports', path: '/reports', icon: FileText, badge: processingCount },
-    { name: 'Upload Data', path: '/upload', icon: UploadCloud },
-    { name: 'Team Members', path: '/members', icon: Users, badge: pendingCount },
-    { name: 'Billing', path: '/billing', icon: CreditCard },
-    { name: 'Org Settings', path: '/organization', icon: Settings },
-    { name: 'Audit Logs', path: '/audit-logs', icon: ClipboardList },
-    { name: 'User Profile', path: '/profile', icon: User },
+    { name: t('nav.dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.reports'), path: '/reports', icon: FileText, badge: processingCount },
+    { name: t('nav.uploadData'), path: '/upload', icon: UploadCloud },
+    { name: t('nav.teamMembers'), path: '/members', icon: Users, badge: pendingCount },
+    { name: t('nav.billing'), path: '/billing', icon: CreditCard },
+    { name: t('nav.orgSettings'), path: '/organization', icon: Settings },
+    { name: t('nav.auditLogs'), path: '/audit-logs', icon: ClipboardList },
+    { name: t('nav.userProfile'), path: '/profile', icon: User },
   ]
 
   return (
@@ -127,10 +129,10 @@ export function Sidebar() {
           <div className="rounded-lg border border-zinc-200 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/40 p-2.5">
             <div className="flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-brand-500 animate-pulse-slow" />
-              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">AI Engine Active</span>
+              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('nav.aiEngineActive')}</span>
             </div>
             <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Reports automatically analyzed.
+              {t('nav.reportsAnalyzed')}
             </p>
           </div>
         )}

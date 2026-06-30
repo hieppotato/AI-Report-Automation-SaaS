@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Mail, UserPlus, Trash2, Shield, X, Plus, Send,
   Copy, RotateCcw, Ban, CheckCircle2, Clock, AlertCircle,
@@ -30,24 +31,25 @@ const inviteSchema = z.object({
 
 // ─── Status Badge ────────────────────────────────────────────────────────────
 function InvitationStatusBadge({ status }) {
+  const { t } = useTranslation()
   const config = {
     pending: {
-      label: 'Pending Acceptance',
+      label: t('members.statusPending'),
       dot: 'bg-amber-400 animate-pulse',
       pill: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40',
     },
     accepted: {
-      label: 'Accepted',
+      label: t('members.statusAccepted'),
       dot: 'bg-emerald-500',
       pill: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40',
     },
     expired: {
-      label: 'Expired',
+      label: t('members.statusExpired'),
       dot: 'bg-zinc-400 dark:bg-zinc-600',
       pill: 'bg-zinc-100 dark:bg-zinc-900/60 text-zinc-500 dark:text-zinc-500 border-zinc-200/60 dark:border-zinc-700/40',
     },
     cancelled: {
-      label: 'Cancelled',
+      label: t('members.statusCancelled'),
       dot: 'bg-rose-400',
       pill: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-800/40',
     },
@@ -65,11 +67,12 @@ function InvitationStatusBadge({ status }) {
 
 // ─── Action Buttons per Status ────────────────────────────────────────────────
 function InvitationActions({ inv, onCopyLink, onResend, onCancel, resendPending, cancelPending }) {
+  const { t } = useTranslation()
   if (inv.status === 'accepted') {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-600">
         <CheckCircle2 className="w-3 h-3" />
-        Member joined
+        {t('members.memberJoined')}
       </span>
     )
   }
@@ -78,7 +81,7 @@ function InvitationActions({ inv, onCopyLink, onResend, onCancel, resendPending,
     return (
       <span className="inline-flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-600">
         <Ban className="w-3 h-3" />
-        Cancelled
+        {t('members.statusCancelled')}
       </span>
     )
   }
@@ -89,10 +92,10 @@ function InvitationActions({ inv, onCopyLink, onResend, onCancel, resendPending,
         onClick={() => onResend(inv.id)}
         disabled={resendPending}
         className="btn-secondary h-7 px-2.5 text-[10px] gap-1.5 cursor-pointer"
-        title="Resend invitation email"
+        title={t('members.titleResendEmail')}
       >
         <RotateCcw className="w-3 h-3" />
-        Resend
+        {t('members.resend')}
       </button>
     )
   }
@@ -103,25 +106,25 @@ function InvitationActions({ inv, onCopyLink, onResend, onCancel, resendPending,
       <button
         onClick={() => onCopyLink(inv.accept_url, inv.email)}
         className="btn-secondary h-7 px-2.5 text-[10px] gap-1.5 cursor-pointer"
-        title="Copy invitation link"
+        title={t('members.titleCopyLink')}
       >
         <Link2 className="w-3 h-3" />
-        Copy Link
+        {t('members.copyLink')}
       </button>
       <button
         onClick={() => onResend(inv.id)}
         disabled={resendPending}
         className="btn-secondary h-7 px-2.5 text-[10px] gap-1.5 cursor-pointer"
-        title="Resend invitation email"
+        title={t('members.titleResendEmail')}
       >
         <RotateCcw className="w-3 h-3" />
-        Resend
+        {t('members.resend')}
       </button>
       <button
         onClick={() => onCancel(inv.id)}
         disabled={cancelPending}
         className="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
-        title="Cancel invitation"
+        title={t('members.titleCancelInvitation')}
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -131,6 +134,7 @@ function InvitationActions({ inv, onCopyLink, onResend, onCancel, resendPending,
 
 // ─── Invite Modal ─────────────────────────────────────────────────────────────
 function InviteModal({ onClose, inviteMember }) {
+  const { t } = useTranslation()
   const [serverErrors, setServerErrors] = useState(null)
 
   const {
@@ -173,8 +177,8 @@ function InviteModal({ onClose, inviteMember }) {
               <UserPlus className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Invite Team Member</h3>
-              <p className="text-[11px] text-zinc-500 leading-none mt-0.5">They'll receive an email with a secure link</p>
+              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{t('members.inviteModalTitle')}</h3>
+              <p className="text-[11px] text-zinc-500 leading-none mt-0.5">{t('members.inviteModalSubtitle')}</p>
             </div>
           </div>
           <button
@@ -195,7 +199,7 @@ function InviteModal({ onClose, inviteMember }) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="label">Recipient Email</label>
+            <label className="label">{t('members.recipientEmail')}</label>
             <div className="relative">
               <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
               <input
@@ -213,18 +217,18 @@ function InviteModal({ onClose, inviteMember }) {
               </p>
             )}
             <p className="mt-1.5 text-[11px] text-zinc-500 leading-relaxed">
-              A secure invitation link will be emailed to authorize workspace access.
+              {t('members.inviteEmailDescription')}
             </p>
           </div>
 
           <div>
-            <label className="label">Workspace Role</label>
+            <label className="label">{t('members.workspaceRole')}</label>
             <select id="invite-role" className="input cursor-pointer" {...register('role')}>
-              <option value="member">Member — Read &amp; Upload</option>
-              <option value="admin">Admin — Manage Configuration</option>
+              <option value="member">{t('members.roleMember')}</option>
+              <option value="admin">{t('members.roleAdmin')}</option>
             </select>
             <p className="mt-1.5 text-[11px] text-zinc-500">
-              Ownership can be transferred after the member joins.
+              {t('members.roleOwnershipNote')}
             </p>
           </div>
 
@@ -234,7 +238,7 @@ function InviteModal({ onClose, inviteMember }) {
               onClick={onClose}
               className="btn-secondary h-9 px-4 cursor-pointer"
             >
-              Cancel
+              {t('members.cancel')}
             </button>
             <button
               id="invite-submit-btn"
@@ -248,12 +252,12 @@ function InviteModal({ onClose, inviteMember }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
                   </svg>
-                  Sending...
+                  {t('members.sending')}
                 </>
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  Send Invitation
+                  {t('members.sendInvitation')}
                 </>
               )}
             </button>
@@ -266,6 +270,7 @@ function InviteModal({ onClose, inviteMember }) {
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export function MembersPage() {
+  const { t } = useTranslation()
   const { addToast } = useUIStore()
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [copiedId, setCopiedId] = useState(null)
@@ -312,16 +317,16 @@ export function MembersPage() {
 
   const handleCopyLink = useCallback(async (acceptUrl, email) => {
     if (!acceptUrl) {
-      addToast('Invitation link not available.', 'error')
+      addToast(t('members.invitationLinkNotAvailable'), 'error')
       return
     }
     try {
       await navigator.clipboard.writeText(acceptUrl)
       setCopiedId(email)
-      addToast('Invitation link copied to clipboard!', 'success')
+      addToast(t('members.invitationLinkCopied'), 'success')
       setTimeout(() => setCopiedId(null), 2000)
     } catch {
-      addToast('Could not copy link. Please copy manually.', 'error')
+      addToast(t('members.couldNotCopyLink'), 'error')
     }
   }, [addToast])
 
@@ -335,8 +340,8 @@ export function MembersPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">Team Directory</h1>
-          <p className="text-sm text-zinc-500 mt-1">Govern user access, invite new members, and manage workspace roles.</p>
+          <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">{t('members.title')}</h1>
+          <p className="text-sm text-zinc-500 mt-1">{t('members.subtitle')}</p>
         </div>
         <button
           id="invite-member-btn"
@@ -344,7 +349,7 @@ export function MembersPage() {
           className="btn-primary h-10 gap-2 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Invite Member
+          {t('members.inviteMember')}
         </button>
       </div>
 
@@ -357,8 +362,8 @@ export function MembersPage() {
                 <UserPlus className="w-4 h-4 text-brand-600 dark:text-brand-400" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">You have pending invitations</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">Accept an invitation to join a workspace.</p>
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{t('members.pendingInvitationsTitle')}</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">{t('members.pendingInvitationsDescription')}</p>
               </div>
             </div>
           </div>
@@ -375,7 +380,7 @@ export function MembersPage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Accept
+                  {t('members.accept')}
                 </button>
               </div>
             ))}
@@ -386,24 +391,24 @@ export function MembersPage() {
       {/* Active Members Card */}
       <div className="card p-0 overflow-hidden mb-6">
         <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10">
-          <h2 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 uppercase tracking-wider">Active Workspace Members</h2>
+          <h2 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 uppercase tracking-wider">{t('members.activeMembersHeader')}</h2>
         </div>
         {membersLoading ? (
           <div className="p-4"><LoadingState type="table" count={3} /></div>
         ) : membersError ? (
           <div className="p-10 text-center text-sm text-rose-500">{membersError.message}</div>
         ) : members.length === 0 ? (
-          <div className="p-10 text-center text-sm text-zinc-500">No members found.</div>
+          <div className="p-10 text-center text-sm text-zinc-500">{t('members.noMembersFound')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-6">Member ID</th>
-                  <th className="py-3.5 px-6">User ID</th>
-                  <th className="py-3.5 px-6">Role</th>
-                  <th className="py-3.5 px-6">Joined</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
+                  <th className="py-3.5 px-6">{t('members.colMemberId')}</th>
+                  <th className="py-3.5 px-6">{t('members.colUserId')}</th>
+                  <th className="py-3.5 px-6">{t('members.colRole')}</th>
+                  <th className="py-3.5 px-6">{t('members.colJoined')}</th>
+                  <th className="py-3.5 px-6 text-right">{t('members.colActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
@@ -430,7 +435,7 @@ export function MembersPage() {
                       <button
                         onClick={() => handleRemoveMember(member)}
                         className="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 rounded hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer"
-                        title="Remove member"
+                        title={t('members.titleRemoveMember')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -448,26 +453,26 @@ export function MembersPage() {
         {/* Header with summary pills */}
         <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 uppercase tracking-wider">
-            Invitation Center
+            {t('members.invitationCenter')}
           </h2>
           {invitations.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               {pendingCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/30 text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  {pendingCount} pending
+                  {t('members.pendingCount', { count: pendingCount })}
                 </span>
               )}
               {acceptedCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/30 text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {acceptedCount} accepted
+                  {t('members.acceptedCount', { count: acceptedCount })}
                 </span>
               )}
               {expiredCount > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-900/40 text-zinc-500 border border-zinc-200/60 dark:border-zinc-700/30 text-[10px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                  {expiredCount} expired
+                  {t('members.expiredCount', { count: expiredCount })}
                 </span>
               )}
             </div>
@@ -481,20 +486,20 @@ export function MembersPage() {
             <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-3">
               <Mail className="w-5 h-5 text-zinc-400" />
             </div>
-            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No invitations yet</p>
-            <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">Invite teammates using the button above.</p>
+              <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{t('members.noInvitationsYet')}</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">{t('members.noInvitationsHint')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-6">Email</th>
-                  <th className="py-3.5 px-6">Role</th>
-                  <th className="py-3.5 px-6">Status</th>
-                  <th className="py-3.5 px-6">Sent</th>
-                  <th className="py-3.5 px-6">Expires</th>
-                  <th className="py-3.5 px-6 text-right">Actions</th>
+                  <th className="py-3.5 px-6">{t('members.colEmail')}</th>
+                  <th className="py-3.5 px-6">{t('members.colRole')}</th>
+                  <th className="py-3.5 px-6">{t('members.colStatus')}</th>
+                  <th className="py-3.5 px-6">{t('members.colSent')}</th>
+                  <th className="py-3.5 px-6">{t('members.colExpires')}</th>
+                  <th className="py-3.5 px-6 text-right">{t('members.colActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">

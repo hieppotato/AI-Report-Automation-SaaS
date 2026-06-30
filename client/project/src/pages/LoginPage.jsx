@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../hooks/useAuth'
 import { acceptInvitation } from '../api/invitations'
@@ -15,6 +16,7 @@ const schema = z.object({
 })
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('invite_token')
@@ -48,7 +50,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Sign in to your Reportly account">
+    <AuthLayout title={t('auth.welcomeBack')} subtitle={t('auth.signInSubtitle')}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {serverError && (
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs">
@@ -58,16 +60,16 @@ export function LoginPage() {
         )}
 
         <div>
-          <label className="label">Email</label>
-          <input type="email" placeholder="you@company.com" className="input" autoComplete="email" {...register('email')} />
+          <label className="label">{t('auth.email')}</label>
+          <input type="email" placeholder={t('auth.emailPlaceholder')} className="input" autoComplete="email" {...register('email')} />
           {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="label mb-0">Password</label>
+            <label className="label mb-0">{t('auth.password')}</label>
             <Link to="/forgot-password" className="text-xs text-brand-600 dark:text-brand-400 hover:underline">
-              Forgot password?
+              {t('auth.forgotPassword')}
             </Link>
           </div>
           <div className="relative">
@@ -90,14 +92,14 @@ export function LoginPage() {
         </div>
 
         <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-9 mt-1">
-          {isSubmitting ? 'Signing in...' : 'Sign in'}
+          {isSubmitting ? t('auth.signInLoading') : t('auth.signIn')}
         </button>
       </form>
 
       <p className="mt-5 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        Don't have an account?{' '}
+        {t('auth.noAccount')}{' '}
         <Link to="/register" className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
-          Create account
+          {t('auth.createAccount')}
         </Link>
       </p>
     </AuthLayout>

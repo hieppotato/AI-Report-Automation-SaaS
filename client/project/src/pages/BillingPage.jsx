@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, CreditCard, Sparkles, Zap, Loader2, HelpCircle, ExternalLink, Settings } from 'lucide-react'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useBilling } from '../hooks/useBilling'
@@ -8,6 +9,7 @@ import { useUploads } from '../hooks/useUpload'
 import { useOrgStore } from '../store/orgStore'
 
 export function BillingPage() {
+  const { t } = useTranslation()
   const activeOrg = useOrgStore((state) => state.activeOrg)
   const { plan: apiPlan, isLoading: planLoading, upgradeToPro, isUpgrading, isPolling, openCustomerPortal, isOpeningPortal } = useBilling()
   const { data: reportsResult } = useReports()
@@ -56,7 +58,7 @@ export function BillingPage() {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 animate-pulse animate-infinite">
           <Loader2 className="w-3 h-3 animate-spin text-brand-500" />
-          Verifying...
+          {t('billing.verifying')}
         </span>
       )
     }
@@ -65,20 +67,20 @@ export function BillingPage() {
       if (status === 'paused') {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            Active Pro (Paused)
+            {t('billing.activeProPaused')}
           </span>
         )
       }
       if (status === 'on_trial') {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            Active Pro (Trial)
+            {t('billing.activeProTrial')}
           </span>
         )
       }
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
-          Active Pro
+          {t('billing.activePro')}
         </span>
       )
     }
@@ -86,7 +88,7 @@ export function BillingPage() {
     if (status === 'cancelled') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-          Cancelled
+          {t('billing.cancelled')}
         </span>
       )
     }
@@ -94,55 +96,55 @@ export function BillingPage() {
     if (status === 'expired') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-600 dark:text-rose-455 border border-rose-500/25">
-          Expired
+          {t('billing.expired')}
         </span>
       )
     }
 
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-550 dark:bg-zinc-900 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800">
-        Free Plan
+        {t('billing.freePlan')}
       </span>
     )
   }
 
   const plans = [
     {
-      name: 'Free',
-      price: '$0',
-      description: 'Ideal for basic solo analyst workflows.',
+      name: t('billing.free'),
+      price: t('billing.freePrice'),
+      description: t('billing.freeDescription'),
       features: [
-        '3 Processed reports limit',
-        'Basic CSV upload ingestion',
-        'Standard SVG trend sparklines',
-        '1 Member seat maximum',
+        t('billing.freeFeature1'),
+        t('billing.freeFeature2'),
+        t('billing.freeFeature3'),
+        t('billing.freeFeature4'),
       ],
-      cta: 'Your Current Plan',
+      cta: t('billing.yourCurrentPlan'),
       current: !isPro,
     },
     {
-      name: 'Pro',
-      price: '$49',
-      description: 'Best for standard growing SaaS systems.',
+      name: t('billing.pro'),
+      price: t('billing.proPrice'),
+      description: t('billing.proDescription'),
       features: [
-        '100 Processed reports per month',
-        'Advanced CSV & Excel support',
-        'AI anomaly diagnostics engine',
-        '5 Member seats included',
-        'LemonSqueezy billing integration',
+        t('billing.proFeature1'),
+        t('billing.proFeature2'),
+        t('billing.proFeature3'),
+        t('billing.proFeature4'),
+        t('billing.proFeature5'),
       ],
-      cta: 'Upgrade to Pro',
+      cta: t('billing.upgradeToPro'),
       current: isPro,
     },
   ]
 
   const comparisons = [
-    { feature: 'Monthly Ingest Limit', free: '3 reports', pro: '100 reports' },
-    { feature: 'File Formats', free: 'CSV only', pro: 'CSV, XLSX, XLS, PDF' },
-    { feature: 'AI Diagnostics', free: 'No', pro: 'Yes, full suite' },
-    { feature: 'Seat Allowance', free: '1 member', pro: '5 members' },
-    { feature: 'Support Tier', free: 'Community', pro: 'Priority Email' },
-    { feature: 'LemonSqueezy Billing', free: 'No', pro: 'Yes' },
+    { feature: t('billing.comparisonIngestLimit'), free: t('billing.comparisonFreeIngestLimit'), pro: t('billing.comparisonProIngestLimit') },
+    { feature: t('billing.comparisonFileFormats'), free: t('billing.comparisonFreeFormats'), pro: t('billing.comparisonProFormats') },
+    { feature: t('billing.comparisonAIDiagnostics'), free: t('billing.no'), pro: t('billing.comparisonProDiagnostics') },
+    { feature: t('billing.comparisonSeatAllowance'), free: t('billing.comparisonFreeSeats'), pro: t('billing.comparisonProSeats') },
+    { feature: t('billing.comparisonSupportTier'), free: t('billing.comparisonFreeSupport'), pro: t('billing.comparisonProSupport') },
+    { feature: t('billing.comparisonLemonSqueezy'), free: t('billing.no'), pro: t('billing.yes') },
   ]
 
   if (planLoading) {
@@ -169,17 +171,17 @@ export function BillingPage() {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">Billing & Subscriptions</h1>
-        <p className="text-sm text-zinc-500 mt-1">Govern subscription metrics, track usage quotas, and manage plan tiers.</p>
+        <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">{t('billing.title')}</h1>
+        <p className="text-sm text-zinc-500 mt-1">{t('billing.subtitle')}</p>
       </div>
 
       {isPolling && (
         <div className="mb-6 p-4 rounded-xl border border-brand-500/25 bg-brand-500/5 text-brand-700 dark:text-brand-400 flex items-start gap-3 text-xs leading-normal animate-in fade-in slide-in-from-top-2 duration-255">
           <Loader2 className="w-4 h-4 animate-spin shrink-0 text-brand-650 dark:text-brand-500 mt-0.5" />
           <div>
-            <span className="font-semibold text-zinc-900 dark:text-zinc-200">Processing LemonSqueezy subscription upgrade...</span>
+            <span className="font-semibold text-zinc-900 dark:text-zinc-200">{t('billing.processingUpgrade')}</span>
             <p className="mt-1 text-zinc-500 dark:text-zinc-405 leading-relaxed">
-              We are currently waiting for the LemonSqueezy payment webhook to propagate. Once confirmed, your plan and workspace limits will automatically update.
+              {t('billing.processingDescription')}
             </p>
           </div>
         </div>
@@ -190,24 +192,24 @@ export function BillingPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-850 text-zinc-400 dark:text-zinc-500 mb-3.5">
             <CreditCard className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">You're currently on the Free plan.</h3>
+          <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{t('billing.freePlanMessage')}</h3>
           <p className="mt-2 text-xs text-zinc-555 dark:text-zinc-400 max-w-md leading-relaxed">
-            Upgrade to the Pro plan to expand your processed reports limit, upload advanced Excel/PDF files, invite team members, and get access to our AI diagnostics engine.
+            {t('billing.freePlanDescription')}
           </p>
           <button
             onClick={() => handleUpgrade('pro')}
             disabled={isUpgrading}
             className="btn-primary h-9 gap-1.5 mt-5 cursor-pointer text-xs justify-center"
           >
-            {isUpgrading ? (
+                {isUpgrading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Generating Checkout...
+                {t('billing.generatingCheckout')}
               </>
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                Upgrade to Pro
+                {t('billing.upgradeToPro')}
               </>
             )}
           </button>
@@ -217,7 +219,7 @@ export function BillingPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="space-y-1.5">
               <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
-                Current Workspace Plan
+                {t('billing.currentWorkspacePlan')}
               </span>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-bold text-zinc-950 dark:text-zinc-50 capitalize">
@@ -226,7 +228,7 @@ export function BillingPage() {
                 {getStatusBadge(activePlanName, apiPlan.status, isPolling)}
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xl">
-                Thank you for subscribing! You have full access to pro reports, custom data formats, anomalies diagnostics, and custom exports.
+                {t('billing.thankYouMessage')}
               </p>
             </div>
 
@@ -234,7 +236,7 @@ export function BillingPage() {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
-                    Provider
+                    {t('billing.provider')}
                   </span>
                   <span className="text-xs font-semibold text-zinc-750 dark:text-zinc-350 capitalize mt-1 block">
                     {apiPlan.provider || 'LemonSqueezy'}
@@ -242,7 +244,7 @@ export function BillingPage() {
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider block">
-                    {apiPlan.status === 'cancelled' ? 'Access Ends At' : 'Renewal Date'}
+                    {apiPlan.status === 'cancelled' ? t('billing.accessEndsAt') : t('billing.renewalDate')}
                   </span>
                   <span className="text-xs font-semibold text-zinc-750 dark:text-zinc-350 mt-1 block">
                     {apiPlan.renewal_at
@@ -259,12 +261,12 @@ export function BillingPage() {
                 {isOpeningPortal ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Loading...
+                    {t('billing.loading')}
                   </>
                 ) : (
                   <>
                     <Settings className="w-3.5 h-3.5" />
-                    Manage Subscription
+                    {t('billing.manageSubscription')}
                     <ExternalLink className="w-3 h-3 opacity-50" />
                   </>
                 )}
@@ -279,10 +281,10 @@ export function BillingPage() {
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
               <CreditCard className="w-4 h-4 text-zinc-400 animate-pulse" />
-              Reports Ingestion
+              {t('billing.reportsIngestion')}
             </span>
             <span className="font-mono text-zinc-500 dark:text-zinc-450">
-              {reportCount} / {reportsLimit} reports
+              {t('billing.reportsCount', { count: reportCount, limit: reportsLimit })}
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
@@ -292,8 +294,8 @@ export function BillingPage() {
             />
           </div>
           <div className="flex justify-between items-center mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            <span>{reportsRemaining} reports remaining</span>
-            <span>Limit: {reportsLimit}/mo</span>
+            <span>{t('billing.reportsRemaining', { count: reportsRemaining })}</span>
+            <span>{t('billing.reportsLimit', { limit: reportsLimit })}</span>
           </div>
         </div>
 
@@ -301,10 +303,10 @@ export function BillingPage() {
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
               <HelpCircle className="w-4 h-4 text-zinc-400" />
-              Storage Space
+              {t('billing.storageSpace')}
             </span>
             <span className="font-mono text-zinc-500 dark:text-zinc-450">
-              {storageUsedMB} MB / {storageLimitMB} MB
+              {t('billing.storageCount', { used: storageUsedMB, limit: storageLimitMB })}
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
@@ -314,8 +316,8 @@ export function BillingPage() {
             />
           </div>
           <div className="flex justify-between items-center mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            <span>{storageRemainingMB} MB remaining</span>
-            <span>Limit: {storageLimitMB} MB</span>
+            <span>{t('billing.storageRemaining', { amount: storageRemainingMB })}</span>
+            <span>{t('billing.storageLimit', { limit: storageLimitMB })}</span>
           </div>
         </div>
 
@@ -323,10 +325,10 @@ export function BillingPage() {
           <div className="flex justify-between items-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-zinc-400" />
-              Workspace Seats
+              {t('billing.workspaceSeats')}
             </span>
             <span className="font-mono text-zinc-500 dark:text-zinc-450">
-              {memberCount} / {seatsLimit} seats
+              {t('billing.seatsCount', { count: memberCount, limit: seatsLimit })}
             </span>
           </div>
           <div className="h-2 w-full rounded-full bg-zinc-100 dark:bg-zinc-900 overflow-hidden mt-3">
@@ -336,8 +338,8 @@ export function BillingPage() {
             />
           </div>
           <div className="flex justify-between items-center mt-2.5 text-[10px] text-zinc-500 dark:text-zinc-400">
-            <span>{seatsRemaining} seats remaining</span>
-            <span>Limit: {seatsLimit} seats</span>
+            <span>{t('billing.seatsRemaining', { count: seatsRemaining })}</span>
+            <span>{t('billing.seatsLimit', { limit: seatsLimit })}</span>
           </div>
         </div>
       </div>
@@ -355,7 +357,7 @@ export function BillingPage() {
             {plan.name === 'Pro' && (
               <span className="absolute top-3.5 right-3.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-400 border border-brand-200/40 uppercase tracking-wider">
                 <Sparkles className="w-3 h-3" />
-                Popular Choice
+                {t('billing.popularChoice')}
               </span>
             )}
 
@@ -365,7 +367,7 @@ export function BillingPage() {
               
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">{plan.price}</span>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">/ month</span>
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">{t('billing.perMonth')}</span>
               </div>
 
               <ul className="mt-6 space-y-3 text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
@@ -388,12 +390,12 @@ export function BillingPage() {
                   {isOpeningPortal ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading...
+                      {t('billing.loading')}
                     </>
                   ) : (
                     <>
                       <Settings className="w-4 h-4" />
-                      Manage Subscription
+                      {t('billing.manageSubscription')}
                     </>
                   )}
                 </button>
@@ -410,10 +412,10 @@ export function BillingPage() {
                   {isUpgrading && plan.name === 'Pro' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
-                      Creating Checkout...
+                      {t('billing.creatingCheckout')}
                     </>
                   ) : plan.current ? (
-                    'Active Plan'
+                    t('billing.activePlan')
                   ) : (
                     plan.cta
                   )}
@@ -428,16 +430,16 @@ export function BillingPage() {
         <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10">
           <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 uppercase tracking-wider flex items-center gap-2">
             <HelpCircle className="w-4 h-4 text-zinc-400" />
-            Pricing & Plan Comparison
+            {t('billing.pricingComparison')}
           </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-50/20 dark:bg-zinc-900/5">
-                <th className="py-3 px-6">Feature Details</th>
-                <th className="py-3 px-6">Free Plan</th>
-                <th className="py-3 px-6">Pro Plan</th>
+                <th className="py-3 px-6">{t('billing.featureDetails')}</th>
+                <th className="py-3 px-6">{t('billing.freePlan')}</th>
+                <th className="py-3 px-6">{t('billing.proPlan')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 leading-relaxed text-zinc-650 dark:text-zinc-350">

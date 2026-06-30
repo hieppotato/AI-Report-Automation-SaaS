@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Trash2, Code, Clipboard, Check, Sparkles, UploadCloud, Download, AlertTriangle, AlertOctagon, FileText, CheckCircle2, TrendingUp, Zap, Loader2 } from 'lucide-react'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
@@ -154,6 +155,7 @@ function buildChartData(report, reportJson) {
 }
 
 export function ReportDetailsPage() {
+  const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const [showJson, setShowJson] = useState(false)
@@ -180,9 +182,9 @@ export function ReportDetailsPage() {
   useEffect(() => {
     if (activeStatus && activeStatus !== prevStatus) {
       if (prevStatus === 'processing' && activeStatus === 'completed') {
-        addToast('AI Analysis completed successfully!', 'success')
+        addToast(t('reportDetail.analysisCompleted'), 'success')
       } else if (prevStatus === 'processing' && activeStatus === 'failed') {
-        addToast('AI Analysis failed. Please review error details.', 'error')
+        addToast(t('reportDetail.analysisFailed'), 'error')
       }
       setPrevStatus(activeStatus)
     }
@@ -208,7 +210,7 @@ export function ReportDetailsPage() {
     exportIndex
   ) => {
     const confirmed = window.confirm(
-      'Delete this exported file?'
+      t('reportDetail.deleteExportConfirm')
     )
 
     if (!confirmed) return
@@ -252,7 +254,7 @@ export function ReportDetailsPage() {
   const showPipelineState = Boolean(report?.file_url || activeStatus !== 'draft' || isUploading)
 
   const handleDelete = async () => {
-    if (window.confirm('Are you absolutely sure you want to delete this report? This will remove all telemetry permanently.')) {
+    if (window.confirm(t('reportDetail.deleteReportConfirm'))) {
       await deleteReport(id)
       navigate('/reports')
     }
@@ -262,7 +264,7 @@ export function ReportDetailsPage() {
     if (!file) return
     setUploadPercent(0)
     setRetryMode(false)
-    addToast('Upload started: sending document to secure storage...', 'info')
+    addToast(t('reportDetail.uploadStarted'), 'info')
     await uploadFile({
       id,
       file,
@@ -298,7 +300,7 @@ export function ReportDetailsPage() {
       <DashboardLayout>
         <div className="mb-6">
           <Link to="/reports" className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-950 transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Reports
+            <ArrowLeft className="w-3.5 h-3.5" /> {t('reportDetail.backToReports')}
           </Link>
         </div>
         <ErrorState error={error} onRetry={refetch} />
@@ -314,19 +316,19 @@ export function ReportDetailsPage() {
           className="inline-flex items-center gap-1.5 text-xs text-zinc-505 hover:text-zinc-950 dark:hover:text-zinc-50 transition-colors mb-3"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Reports
+          {t('reportDetail.backToReports')}
         </Link>
         
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">
-                {report?.title || 'Untitled Report'}
+                {report?.title || t('reportDetail.untitledReport')}
               </h1>
               <ReportStatusBadge status={activeStatus} />
             </div>
             <p className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 mt-1 uppercase tracking-wider font-semibold">
-              UUID Scope: {id}
+              {t('reportDetail.uuidScope')}: {id}
             </p>
           </div>
           
@@ -335,7 +337,7 @@ export function ReportDetailsPage() {
             className="btn-danger h-10 gap-2 cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
-            Delete Report
+            {t('reportDetail.deleteReport')}
           </button>
         </div>
       </div>
@@ -350,16 +352,16 @@ export function ReportDetailsPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-450 mb-4 animate-pulse">
                   <AlertOctagon className="w-5 h-5 animate-bounce" />
                 </div>
-                <h3 className="text-sm font-semibold text-rose-800 dark:text-rose-400">AI Processing Failed</h3>
+                <h3 className="text-sm font-semibold text-rose-800 dark:text-rose-400">{t('reportDetail.processingFailed')}</h3>
                 <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 max-w-md leading-relaxed">
-                  Reason: <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">{errorMessage || report?.error_message || "Cell format inconsistencies or processing limits."}</span>
+                  {t('reportDetail.reason')}: <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">{errorMessage || report?.error_message || t('reportDetail.defaultError')}</span>
                 </p>
                 <button
                   onClick={handleRetryUpload}
                   className="btn-primary h-9 gap-1.5 mt-5 cursor-pointer"
                 >
                   <UploadCloud className="w-4 h-4" />
-                  Retry Upload
+                  {t('reportDetail.retryUpload')}
                 </button>
               </div>
             ) : (
@@ -369,7 +371,7 @@ export function ReportDetailsPage() {
                     <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-3">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-brand-600" />
-                        <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">Source File Details</span>
+                        <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">{t('reportDetail.sourceFileDetails')}</span>
                       </div>
                       {report?.file_url && (
                         <a
@@ -379,25 +381,25 @@ export function ReportDetailsPage() {
                           className="btn-secondary h-8 px-3 text-[10px] gap-1.5 cursor-pointer"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          Download Source
+                          {t('reportDetail.downloadSource')}
                         </a>
                       )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-left">
                       <div>
-                        <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">File Name</span>
+                        <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">{t('reportDetail.fileName')}</span>
                         <p className="font-medium text-xs text-zinc-800 dark:text-zinc-200 mt-1 truncate" title={report.file_name}>
                           {report.file_name}
                         </p>
                       </div>
                       <div>
-                        <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">File Type</span>
+                        <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">{t('reportDetail.fileType')}</span>
                         <p className="font-medium text-xs text-zinc-850 dark:text-zinc-200 mt-1 uppercase">
                           {report.file_type || report.file_name.split('.').pop()}
                         </p>
                       </div>
                       <div>
-                        <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Uploaded At</span>
+                        <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">{t('reportDetail.uploadedAt')}</span>
                         <p className="font-medium text-xs text-zinc-850 dark:text-zinc-200 mt-1">
                           {new Date(report.updated_at || report.created_at).toLocaleString()}
                         </p>
@@ -408,18 +410,18 @@ export function ReportDetailsPage() {
                   <div className="card space-y-4">
                     <div className="flex items-center gap-2">
                       <UploadCloud className="w-4 h-4 text-brand-500" />
-                      <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">Upload Source File</h3>
+                      <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">{t('reportDetail.uploadSourceFile')}</h3>
                     </div>
                     
                     {!report?.file_name && !isUploading && (
                       <div className="p-3 text-center rounded-lg border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-950/20 mb-1">
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">No source file uploaded yet.</p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">{t('reportDetail.noSourceFile')}</p>
                       </div>
                     )}
 
                     <FileUploadCard onFileSelect={handleFileSelect} />
                     {uploadError && (
-                      <p className="text-xs text-rose-600 dark:text-rose-450">{uploadError.message || 'Upload failed.'}</p>
+                      <p className="text-xs text-rose-600 dark:text-rose-450">{uploadError.message || t('reportDetail.uploadFailed')}</p>
                     )}
                   </div>
                 )}
@@ -429,10 +431,10 @@ export function ReportDetailsPage() {
                   <div className="card space-y-4">
                     <div className="flex items-center gap-2 pb-1.5 border-b border-zinc-100 dark:border-zinc-900">
                       <Download className="w-4 h-4 text-brand-600" />
-                      <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">Export Report Document</span>
+                      <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">{t('reportDetail.exportReportDocument')}</span>
                     </div>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
-                      Compile and download a professional summary of this report in PDF or Microsoft Word format.
+                      {t('reportDetail.exportDescription')}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <button
@@ -445,7 +447,7 @@ export function ReportDetailsPage() {
                         ) : (
                           <FileText className="w-4 h-4" />
                         )}
-                        {isExporting && exportFormat === 'pdf' ? 'Exporting PDF...' : 'Export PDF'}
+                        {isExporting && exportFormat === 'pdf' ? t('reportDetail.exportingPdf') : t('reportDetail.exportPdf')}
                       </button>
                       <button
                         disabled={isExporting}
@@ -457,7 +459,7 @@ export function ReportDetailsPage() {
                         ) : (
                           <FileText className="w-4 h-4" />
                         )}
-                        {isExporting && exportFormat === 'docx' ? 'Exporting DOCX...' : 'Export DOCX'}
+                        {isExporting && exportFormat === 'docx' ? t('reportDetail.exportingDocx') : t('reportDetail.exportDocx')}
                       </button>
                     </div>
                   </div>
@@ -489,7 +491,7 @@ export function ReportDetailsPage() {
         </div>
 
         <div>
-          <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4">Ingestion Telemetry KPIs</h3>
+          <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4">{t('reportDetail.ingestionTelemetryKPIs')}</h3>
           <MetricsGrid metrics={metrics} />
         </div>
 
@@ -498,7 +500,7 @@ export function ReportDetailsPage() {
           <div className="space-y-8">
             {executiveSummary && (
               <div className="card border-l-4 border-l-brand-600 dark:border-l-brand-500 bg-brand-50/5 dark:bg-brand-950/5 p-6">
-                <h3 className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-2.5">Executive Summary</h3>
+                <h3 className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-2.5">{t('reportDetail.executiveSummary')}</h3>
                 <p className="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-medium">
                   {executiveSummary}
                 </p>
@@ -509,14 +511,14 @@ export function ReportDetailsPage() {
               <div>
                 <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                   <TrendingUp className="w-4 h-4 text-blue-500" />
-                  Key Trends
+                  {t('reportDetail.keyTrends')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {keyTrends.map((item, idx) => (
                     <InsightCard
                       key={`trend-${idx}`}
                       type="trend"
-                      title={item.title || "Market Trend"}
+                      title={item.title || t('reportDetail.marketTrend')}
                       description={item.description}
                     />
                   ))}
@@ -528,14 +530,14 @@ export function ReportDetailsPage() {
               <div>
                 <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                   <AlertOctagon className="w-4 h-4 text-rose-500" />
-                  Risks & Vulnerabilities
+                  {t('reportDetail.risksVulnerabilities')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {risks.map((item, idx) => (
                     <InsightCard
                       key={`risk-${idx}`}
                       type="risk"
-                      title={item.title || "Identified Risk"}
+                      title={item.title || t('reportDetail.identifiedRisk')}
                       description={item.description}
                     />
                   ))}
@@ -547,14 +549,14 @@ export function ReportDetailsPage() {
               <div>
                 <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-emerald-500" />
-                  Growth Opportunities
+                  {t('reportDetail.growthOpportunities')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {opportunities.map((item, idx) => (
                     <InsightCard
                       key={`opportunity-${idx}`}
                       type="anomaly"
-                      title={item.title || "Strategic Opportunity"}
+                      title={item.title || t('reportDetail.strategicOpportunity')}
                       description={item.description}
                     />
                   ))}
@@ -566,14 +568,14 @@ export function ReportDetailsPage() {
               <div>
                 <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
                   <Zap className="w-4 h-4 text-brand-500" />
-                  Actionable Recommendations
+                  {t('reportDetail.actionableRecommendations')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {recommendations.map((item, idx) => (
                     <InsightCard
                       key={`recommendation-${idx}`}
                       type="recommendation"
-                      title={item.title || "AI Action Step"}
+                      title={item.title || t('reportDetail.aiActionStep')}
                       description={item.description}
                     />
                   ))}
@@ -586,7 +588,7 @@ export function ReportDetailsPage() {
         <div>
           <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            Ingestion Anomaly Deviation Logs
+            {t('reportDetail.anomalyDeviationLogs')}
           </h3>
           {anomaliesList.length ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -597,7 +599,7 @@ export function ReportDetailsPage() {
                 >
                   <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
                   <div>
-                    <span className="font-semibold">Anomaly detected:</span>
+                    <span className="font-semibold">{t('reportDetail.anomalyDetected')}</span>
                     <p className="mt-0.5 text-zinc-650 dark:text-zinc-400 font-mono text-[11px]">{anomaly}</p>
                   </div>
                 </div>
@@ -608,13 +610,13 @@ export function ReportDetailsPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-500 mb-2">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
-              <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200">No anomalies detected.</p>
+              <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200">{t('reportDetail.noAnomaliesDetected')}</p>
             </div>
           )}
         </div>
 
         <div>
-          <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4">Interactive Performance Visualizations</h3>
+          <h3 className="text-xs font-semibold text-zinc-450 dark:text-zinc-500 uppercase tracking-wider mb-4">{t('reportDetail.interactiveVisualizations')}</h3>
           <ChartsSection charts={report?.charts} />
         </div>
 
@@ -625,10 +627,10 @@ export function ReportDetailsPage() {
           >
             <span className="flex items-center gap-2">
               <Code className="w-4 h-4 text-zinc-400" />
-              Raw Report Payload Data (JSON)
+              {t('reportDetail.rawReportPayload')}
             </span>
             <span className="text-[10px] text-zinc-450">
-              {showJson ? 'Collapse Viewer' : 'Expand Viewer'}
+              {showJson ? t('reportDetail.collapseViewer') : t('reportDetail.expandViewer')}
             </span>
           </button>
 
@@ -637,10 +639,10 @@ export function ReportDetailsPage() {
               <button
                 onClick={handleCopy}
                 className="absolute top-4 right-4 p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer flex items-center gap-1 text-[10px]"
-                title="Copy report payload"
+                title={t('reportDetail.copyPayloadTitle')}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Clipboard className="w-3.5 h-3.5" />}
-                {copied ? 'Copied!' : 'Copy JSON'}
+                {copied ? t('reportDetail.copied') : t('reportDetail.copyJson')}
               </button>
               <pre className="overflow-x-auto text-[10px] text-zinc-300 font-mono pr-24 max-h-96">
                 {JSON.stringify(report, null, 2)}

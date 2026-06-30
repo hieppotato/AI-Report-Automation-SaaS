@@ -13,11 +13,13 @@ import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useUIStore } from '../store/uiStore'
 import { useOrgStore } from '../store/orgStore'
 import { useUploadFile } from '../hooks/useUpload'
+import { useTranslation } from 'react-i18next'
 
 export function UploadPage() {
   const { addToast } = useUIStore()
   const activeOrg = useOrgStore((state) => state.activeOrg)
   const uploadFileMutation = useUploadFile()
+  const { t } = useTranslation()
   const [file, setFile] = useState(null)
   const [isDragActive, setIsDragActive] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -41,7 +43,7 @@ export function UploadPage() {
     const allowedExtensions = ['csv', 'xlsx', 'xls']
     
     if (!allowedExtensions.includes(fileExtension)) {
-      addToast('Invalid file format. Please upload a CSV or Excel sheet.', 'error')
+      addToast(t('upload.invalidFormat'), 'error')
       setUploadState('error')
       setFile(null)
       return
@@ -75,7 +77,7 @@ export function UploadPage() {
   const handleUploadSubmit = async () => {
     if (!file) return
     if (!activeOrg?.id) {
-      addToast('Select a workspace before uploading.', 'error')
+      addToast(t('upload.selectWorkspace'), 'error')
       return
     }
 
@@ -107,9 +109,9 @@ export function UploadPage() {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">Upload Data</h1>
+        <h1 className="text-3xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">{t('upload.title')}</h1>
         <p className="text-sm text-zinc-500 mt-1.5">
-          Upload a spreadsheet to generate AI-assisted reports.
+          {t('upload.subtitle')}
         </p>
       </div>
 
@@ -140,16 +142,16 @@ export function UploadPage() {
                   <Upload className="w-5 h-5" />
                 </div>
                 <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                  Drag and drop your spreadsheet here
+                  {t('upload.dragDrop')}
                 </h3>
                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  CSV, XLSX, or XLS files supported.
+                  {t('upload.supportedFormats')}
                 </p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="btn-secondary h-8 mt-4 text-xs"
                 >
-                  Browse Files
+                  {t('upload.browseFiles')}
                 </button>
               </>
             ) : (
@@ -183,7 +185,7 @@ export function UploadPage() {
                     <div className="flex justify-between text-xs font-semibold text-zinc-600 dark:text-zinc-400">
                       <span className="flex items-center gap-1.5">
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-500" />
-                        Ingesting spreadsheet cells...
+                        {t('upload.ingesting')}
                       </span>
                       <span className="font-mono">{uploadProgress}%</span>
                     </div>
@@ -200,9 +202,9 @@ export function UploadPage() {
                   <div className="flex items-center gap-3 p-4 rounded-xl border border-emerald-200 dark:border-emerald-950/20 bg-emerald-50/10 dark:bg-emerald-950/5 text-left text-sm text-emerald-800 dark:text-emerald-400">
                     <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-500" />
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-xs text-emerald-800 dark:text-emerald-400">Processing complete!</p>
+                      <p className="font-semibold text-xs text-emerald-800 dark:text-emerald-400">{t('upload.processingComplete')}</p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
-                        Your file has been indexed. AI has generated anomaly metrics diagnostics correctly.
+                        {t('upload.processingCompleteMsg')}
                       </p>
                     </div>
                   </div>
@@ -212,9 +214,9 @@ export function UploadPage() {
                   <div className="flex items-center gap-3 p-4 rounded-xl border border-red-200 dark:border-red-950/20 bg-red-50/10 dark:bg-red-950/5 text-left text-sm text-red-800 dark:text-red-400">
                     <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500" />
                     <div className="space-y-0.5">
-                      <p className="font-semibold text-xs">Upload failed</p>
+                      <p className="font-semibold text-xs">{t('upload.uploadFailed')}</p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
-                        Check Supabase Storage bucket permissions and try again.
+                        {t('upload.uploadFailedMsg')}
                       </p>
                     </div>
                   </div>
@@ -226,13 +228,13 @@ export function UploadPage() {
                       onClick={handleClear}
                       className="btn-secondary h-9 text-xs"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                     <button
                       onClick={handleUploadSubmit}
                       className="btn-primary h-9 gap-1.5 text-xs"
                     >
-                      Start Analysis
+                      {t('upload.startAnalysis')}
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -244,13 +246,13 @@ export function UploadPage() {
                       onClick={handleClear}
                       className="btn-secondary h-9 text-xs"
                     >
-                      Upload Another
+                      {t('upload.uploadAnother')}
                     </button>
                     <Link
                       to="/reports"
                       className="btn-primary h-9 gap-1.5 text-xs"
                     >
-                      View Reports
+                      {t('upload.viewReports')}
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -262,34 +264,34 @@ export function UploadPage() {
 
         <div className="space-y-5">
           <div className="card">
-            <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 mb-3 uppercase tracking-wider">Ingestion Guide</h3>
+            <h3 className="text-xs font-semibold text-zinc-950 dark:text-zinc-50 mb-3 uppercase tracking-wider">{t('upload.ingestionGuide')}</h3>
             <div className="space-y-3 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
               <p>
-                Ensure your spreadsheet contains columns for:
+                {t('upload.ensureColumns')}
               </p>
               
               <ul className="space-y-2 font-medium text-zinc-700 dark:text-zinc-300">
                 <li className="flex items-start gap-2">
                   <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Date</strong>: YYYY-MM-DD format</span>
+                  <span><strong>{t('upload.date')}</strong>{t('upload.dateFormat')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Sales Value</strong>: Transaction amounts</span>
+                  <span><strong>{t('upload.salesValue')}</strong>{t('upload.salesValueDesc')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Quantity</strong>: Item count</span>
+                  <span><strong>{t('upload.quantity')}</strong>{t('upload.quantityDesc')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="h-1 w-1 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <span><strong>Category</strong>: Classification tags</span>
+                  <span><strong>{t('upload.category')}</strong>{t('upload.categoryDesc')}</span>
                 </li>
               </ul>
 
               <div className="border-t border-zinc-100 dark:border-zinc-800 pt-3 mt-3">
                 <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal">
-                  Missing columns will trigger warnings but data will still be parsed.
+                  {t('upload.missingColumnsNote')}
                 </p>
               </div>
             </div>

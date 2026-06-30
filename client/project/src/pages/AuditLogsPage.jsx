@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Calendar, Search, User, ShieldAlert, Filter, RotateCcw, FileText } from 'lucide-react'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { useOrgStore } from '../store/orgStore'
@@ -50,6 +51,7 @@ const DEFAULT_LOGS = [
 ]
 
 export function AuditLogsPage() {
+  const { t } = useTranslation()
   const activeOrg = useOrgStore((state) => state.activeOrg)
   const orgId = activeOrg?.id
   const [logs, setLogs] = useState([])
@@ -153,16 +155,16 @@ export function AuditLogsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight flex items-center gap-2.5">
           <ShieldAlert className="w-6 h-6 text-brand-650" />
-          Workspace Audit Logs
+          {t('audit.title')}
         </h1>
-        <p className="text-sm text-zinc-500 mt-1">Review access tracking, report generations, configuration adjustments, and user telemetry modifications.</p>
+        <p className="text-sm text-zinc-500 mt-1">{t('audit.subtitle')}</p>
       </div>
 
       {/* Filters Toolbar */}
       <div className="card p-5 space-y-4 mb-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
           <Filter className="w-3.5 h-3.5" />
-          Filter Trail Logs
+          {t('audit.filterTrailLogs')}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search bar */}
@@ -170,7 +172,7 @@ export function AuditLogsPage() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input 
               type="text" 
-              placeholder="Search user, action, target..." 
+              placeholder={t('audit.searchPlaceholder')} 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input pl-10"
@@ -184,7 +186,7 @@ export function AuditLogsPage() {
               onChange={(e) => setActorFilter(e.target.value)}
               className="input capitalize cursor-pointer"
             >
-              <option value="all">All Actors</option>
+              <option value="all">{t('audit.allActors')}</option>
               {uniqueActors.filter(actor => actor !== 'all').map(actor => (
                 <option key={actor} value={actor}>{actor}</option>
               ))}
@@ -198,7 +200,7 @@ export function AuditLogsPage() {
               onChange={(e) => setActionFilter(e.target.value)}
               className="input capitalize cursor-pointer"
             >
-              <option value="all">All Actions</option>
+              <option value="all">{t('audit.allActions')}</option>
               {uniqueActions.filter(action => action !== 'all').map(action => (
                 <option key={action} value={action}>{formatActionName(action)}</option>
               ))}
@@ -212,7 +214,7 @@ export function AuditLogsPage() {
               className="btn-secondary w-full h-10 gap-1.5 cursor-pointer justify-center text-xs"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Reset Filters
+              {t('audit.resetFilters')}
             </button>
           </div>
         </div>
@@ -220,7 +222,7 @@ export function AuditLogsPage() {
         {/* Date Ranges */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 border-t border-zinc-100 dark:border-zinc-900/60">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label className="text-xs font-semibold text-zinc-450 whitespace-nowrap">Start Date:</label>
+            <label className="text-xs font-semibold text-zinc-450 whitespace-nowrap">{t('audit.startDate')}</label>
             <div className="relative flex-1">
               <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
               <input 
@@ -232,7 +234,7 @@ export function AuditLogsPage() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label className="text-xs font-semibold text-zinc-450 whitespace-nowrap">End Date:</label>
+            <label className="text-xs font-semibold text-zinc-450 whitespace-nowrap">{t('audit.endDate')}</label>
             <div className="relative flex-1">
               <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
               <input 
@@ -251,18 +253,18 @@ export function AuditLogsPage() {
         {filteredLogs.length === 0 ? (
           <div className="p-12 text-center flex flex-col items-center justify-center">
             <FileText className="w-8 h-8 text-zinc-400 mb-3" />
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">No logs found matching filters</p>
-            <p className="text-xs text-zinc-500 mt-1">Try clearing search phrases or expanding date bounds.</p>
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t('audit.noLogsFound')}</p>
+            <p className="text-xs text-zinc-500 mt-1">{t('audit.noLogsHint')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-6">Timestamp</th>
-                  <th className="py-3.5 px-6">Actor / User</th>
-                  <th className="py-3.5 px-6">Action Event</th>
-                  <th className="py-3.5 px-6">Target Resource</th>
+                  <th className="py-3.5 px-6">{t('audit.colTimestamp')}</th>
+                  <th className="py-3.5 px-6">{t('audit.colActorUser')}</th>
+                  <th className="py-3.5 px-6">{t('audit.colActionEvent')}</th>
+                  <th className="py-3.5 px-6">{t('audit.colTargetResource')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-mono text-[11px] leading-relaxed">

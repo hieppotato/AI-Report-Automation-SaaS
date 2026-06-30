@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { useAuth } from '../hooks/useAuth'
 import { useUIStore } from '../store/uiStore'
@@ -16,6 +17,7 @@ const schema = z.object({
 })
 
 export function RegisterPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const inviteToken = searchParams.get('invite_token')
@@ -69,12 +71,12 @@ export function RegisterPage() {
 
   return (
     <AuthLayout
-      title={inviteToken ? 'Create your account to join' : 'Create your account'}
-      subtitle={inviteToken ? "You've been invited to join a workspace" : 'Begin your journey with Reportly today'}
+      title={inviteToken ? t('auth.createYourAccount') : t('auth.createYourAccountAlone')}
+      subtitle={inviteToken ? t('auth.invitedToJoin') : t('auth.beginJourney')}
     >
       {inviteToken && (
         <div className="mb-4 px-3 py-2.5 rounded-lg bg-brand-50 dark:bg-brand-950/30 border border-brand-200/50 dark:border-brand-800/40 text-brand-700 dark:text-brand-400 text-xs">
-          You've been invited to join a workspace. Create an account to accept.
+          {t('auth.invitedToJoin')} {t('auth.createAccountToAccept')}
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -86,19 +88,19 @@ export function RegisterPage() {
         )}
 
         <div>
-          <label className="label">Full Name</label>
+          <label className="label">{t('auth.fullName')}</label>
           <input type="text" placeholder="Alex Johnson" className="input" {...register('fullName')} />
           {errors.fullName && <p className="mt-1 text-xs text-red-500">{errors.fullName.message}</p>}
         </div>
 
         <div>
-          <label className="label">Email Address</label>
+          <label className="label">{t('auth.emailAddress')}</label>
           <input type="email" placeholder="you@company.com" className="input" autoComplete="email" {...register('email')} />
           {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         <div>
-          <label className="label">Password</label>
+          <label className="label">{t('auth.password')}</label>
           <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
@@ -119,14 +121,14 @@ export function RegisterPage() {
         </div>
 
         <button type="submit" disabled={isSubmitting} className="btn-primary w-full h-9 mt-1">
-          {isSubmitting ? 'Creating account...' : inviteToken ? 'Create Account & Join' : 'Create account'}
+          {isSubmitting ? t('auth.creatingAccount') : inviteToken ? t('auth.createAccountAndJoin') : t('auth.createAccount')}
         </button>
       </form>
 
       <p className="mt-5 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        Already have an account?{' '}
+        {t('auth.alreadyHaveAccount')}{' '}
         <Link to={inviteToken ? `/login?invite_token=${inviteToken}` : "/login"} className="text-brand-600 dark:text-brand-400 font-medium hover:underline">
-          Sign in
+          {t('auth.signIn')}
         </Link>
       </p>
     </AuthLayout>

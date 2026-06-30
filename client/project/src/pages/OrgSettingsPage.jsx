@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,6 +15,7 @@ const schema = z.object({
 })
 
 export function OrgSettingsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { activeOrg, setActiveOrg, organizations, setOrganizations } = useOrgStore()
   const { addToast } = useUIStore()
@@ -41,7 +43,7 @@ export function OrgSettingsPage() {
     
     setOrganizations(updatedList)
     setActiveOrg(updatedOrg)
-    addToast('Workspace parameters updated successfully!', 'success')
+    addToast(t('settings.toastSuccess'), 'success')
   }
 
   const handleDeleteWorkspace = async () => {
@@ -52,7 +54,7 @@ export function OrgSettingsPage() {
       const updatedList = organizations.filter((o) => o.id !== activeOrg.id)
       setOrganizations(updatedList)
       
-      addToast(`Workspace "${activeOrg.name}" has been deleted.`, 'success')
+      addToast(t('settings.toastDeleted', { name: activeOrg.name }), 'success')
       
       if (updatedList.length > 0) {
         setActiveOrg(updatedList[0])
@@ -66,18 +68,18 @@ export function OrgSettingsPage() {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">Workspace Settings</h1>
-        <p className="text-sm text-zinc-500 mt-1">Manage organization details, customize parameters, and govern workspace security.</p>
+        <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">{t('settings.title')}</h1>
+        <p className="text-sm text-zinc-500 mt-1">{t('settings.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="card">
-            <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 mb-4">Workspace Details</h3>
+            <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 mb-4">{t('settings.workspaceDetails')}</h3>
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <label className="label">Workspace Name</label>
+                <label className="label">{t('settings.workspaceName')}</label>
                 <input
                   type="text"
                   placeholder="Acme Corp"
@@ -90,7 +92,7 @@ export function OrgSettingsPage() {
               </div>
 
               <div>
-                <label className="label">Workspace Slug</label>
+                <label className="label">{t('settings.workspaceSlug')}</label>
                 <div className="relative flex items-center">
                   <span className="absolute left-3 text-sm text-zinc-400 dark:text-zinc-500 select-none">
                     reportly.ai/
@@ -113,7 +115,7 @@ export function OrgSettingsPage() {
                   disabled={isSubmitting}
                   className="btn-primary h-10 cursor-pointer"
                 >
-                  {isSubmitting ? 'Saving changes…' : 'Save Changes'}
+                  {isSubmitting ? t('settings.saving') : t('settings.saveChanges')}
                 </button>
               </div>
             </form>
@@ -122,14 +124,14 @@ export function OrgSettingsPage() {
           <div className="card border-red-200/50 dark:border-red-950/20 bg-red-50/10 dark:bg-red-950/5">
             <div className="flex items-center gap-2 mb-4">
               <ShieldAlert className="w-5 h-5 text-red-650 dark:text-red-450" />
-              <h3 className="text-sm font-semibold text-red-650 dark:text-red-400">Danger Zone</h3>
+              <h3 className="text-sm font-semibold text-red-650 dark:text-red-400">{t('settings.dangerZone')}</h3>
             </div>
             
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="space-y-1">
-                <p className="text-xs font-bold text-zinc-850 dark:text-zinc-200">Delete this workspace</p>
+                <p className="text-xs font-bold text-zinc-850 dark:text-zinc-200">{t('settings.deleteWorkspaceTitle')}</p>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal max-w-md">
-                  Once you delete a workspace, there is no going back. All processed CSV cells, uploaded spreadsheets, and AI anomalies reports will be deleted permanently.
+                  {t('settings.deleteWorkspaceDescription')}
                 </p>
               </div>
               <button
@@ -137,7 +139,7 @@ export function OrgSettingsPage() {
                 className="btn-danger h-10 gap-2 cursor-pointer flex-shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
-                Delete Workspace
+                {t('settings.deleteWorkspaceButton')}
               </button>
             </div>
           </div>
@@ -145,34 +147,34 @@ export function OrgSettingsPage() {
 
         <div className="space-y-6">
           <div className="card">
-            <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 mb-3">Subscription Tier</h3>
+            <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 mb-3">{t('settings.subscriptionTier')}</h3>
             
             <div className="rounded-xl border border-brand-200/30 bg-brand-50/20 dark:bg-brand-950/10 p-4 mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-brand-650 dark:text-brand-400 font-mono tracking-wide uppercase">
                   {activeOrg?.plan || 'Free'} Tier
                 </span>
-                <span className="badge badge-success">Active</span>
+                <span className="badge badge-success">{t('settings.active')}</span>
               </div>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
-                Your workspace is currently operating on the <strong>{activeOrg?.plan || 'Free'}</strong> tier. You have unlimited reports ingestion diagnostics.
+                {t('settings.tierDescription', { plan: activeOrg?.plan || 'Free' })}
               </p>
             </div>
 
             <div className="space-y-2 text-xs">
-              <p className="font-semibold text-zinc-800 dark:text-zinc-200">Tier benefits:</p>
+              <p className="font-semibold text-zinc-800 dark:text-zinc-200">{t('settings.tierBenefits')}</p>
               <ul className="space-y-1.5 text-zinc-500 dark:text-zinc-400">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Real-time anomaly diagnostics</span>
+                  <span>{t('settings.benefitAnomaly')}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>Advanced SVG monthly trends</span>
+                  <span>{t('settings.benefitSvg')}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span>5 Ingestion analysts seats</span>
+                  <span>{t('settings.benefitSeats')}</span>
                 </li>
               </ul>
             </div>

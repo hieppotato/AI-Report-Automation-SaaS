@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 // Replaced Lucide icons with Phosphor Icons per design-taste-frontend-v1 guidelines
 import { TrendUp, TrendDown, Upload, UserPlus, FileXls, ArrowRight, ArrowsClockwise, Sparkle, Lightning, CheckCircle, X } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { DashboardLayout } from '../components/layout/DashboardLayout'
 import { MiniLineChart } from '../components/charts/MiniLineChart'
 import { RevenueChart } from '../components/charts/RevenueChart'
@@ -19,6 +20,7 @@ export function DashboardPage() {
   const activeOrg = useOrgStore((state) => state.activeOrg)
   const { data: summary, isLoading: summaryLoading, error: summaryError } = useReportSummary()
   const { data: reportsResult, isLoading: reportsLoading } = useReports({ limit: 5, offset: 0 })
+  const { t } = useTranslation()
 
   const reports = reportsResult?.items || []
 
@@ -72,33 +74,33 @@ export function DashboardPage() {
   const fallbackSpark = sparkData.length > 1 ? sparkData : [0, Number(summary?.total_revenue || 0)]
 
   const triggerReanalysis = () => {
-    addToast('Diagnostics will be available after AI processing is connected.', 'info')
+    addToast(t('dashboard.diagnosticsNote'), 'info')
   }
 
   const kpis = [
     {
-      label: 'Total Revenue',
+      label: t('dashboard.totalRevenue'),
       value: formatCurrency(Number(summary?.total_revenue || 0)),
       trend: '+',
       icon: TrendUp,
       color: '#10b981',
     },
     {
-      label: 'Total Orders',
+      label: t('dashboard.totalOrders'),
       value: formatNumber(summary?.total_orders || 0),
       trend: '+',
       icon: TrendUp,
       color: '#10b981',
     },
     {
-      label: 'AOV',
+      label: t('dashboard.aov'),
       value: formatCurrency(Number(summary?.avg_order_value || 0)),
       trend: '-',
       icon: TrendDown,
       color: '#10b981',
     },
     {
-      label: 'Repeat Rate',
+      label: t('dashboard.repeatRate'),
       value: `${(Number(summary?.repeat_customer_rate || 0) * 100).toFixed(1)}%`,
       trend: '+',
       icon: TrendUp,
@@ -114,18 +116,18 @@ export function DashboardPage() {
             Dashboard
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1.5">
-            Real-time insights from your uploaded reports.
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button onClick={triggerReanalysis} className="btn-secondary h-9 gap-2">
             <ArrowsClockwise className="w-4 h-4 text-zinc-400" />
-            Diagnostics
+            {t('dashboard.diagnostics')}
           </button>
           <Link to="/upload" className="btn-primary h-9 gap-2">
             <Upload className="w-4 h-4" />
-            Upload
+            {t('dashboard.upload')}
           </Link>
         </div>
       </div>
@@ -144,8 +146,8 @@ export function DashboardPage() {
                 <UserPlus className="w-4 h-4 text-brand-600 dark:text-brand-400" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Pending Invitations</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">You have {pendingInvites.length} workspace invitation{pendingInvites.length > 1 ? 's' : ''}.</p>
+                <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{t('dashboard.pendingInvitations')}</h3>
+                <p className="text-xs text-zinc-500 mt-0.5">{t('dashboard.workspaceInvitations', { count: pendingInvites.length })}</p>
               </div>
             </div>
           </div>
@@ -162,7 +164,7 @@ export function DashboardPage() {
                   className="btn-primary h-8 text-xs gap-1.5 shrink-0"
                 >
                   <CheckCircle className="w-3.5 h-3.5" />
-                  Accept
+                  {t('dashboard.accept')}
                 </button>
               </div>
             ))}
@@ -175,13 +177,13 @@ export function DashboardPage() {
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 mb-4">
             <Lightning className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
           </div>
-          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">No data yet</h3>
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{t('dashboard.noDataYet')}</h3>
           <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto">
-            Upload a spreadsheet to start generating insights.
+            {t('dashboard.uploadSpreadsheet')}
           </p>
           <Link to="/upload" className="btn-primary h-9 gap-2 mt-6 inline-flex">
             <Upload className="w-4 h-4" />
-            Upload Report
+            {t('dashboard.uploadReport')}
           </Link>
         </div>
       ) : (
@@ -195,7 +197,7 @@ export function DashboardPage() {
                     <span className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{kpi.label}</span>
                     <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full">
                       <Icon className="w-2.5 h-2.5" />
-                      Live
+                      {t('dashboard.live')}
                     </div>
                   </div>
                   <div className="mt-2.5 flex items-baseline justify-between gap-2">
@@ -204,7 +206,7 @@ export function DashboardPage() {
                     </span>
                     <MiniLineChart data={fallbackSpark} strokeColor={kpi.color} />
                   </div>
-                  <p className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-500">From report summary</p>
+                  <p className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-500">{t('dashboard.fromReportSummary')}</p>
                 </div>
               )
             })}
@@ -221,25 +223,25 @@ export function DashboardPage() {
                   <Lightning className="w-4 h-4 text-brand-500" />
                   Quick Actions
                 </h3>
-                <p className="text-[11px] text-zinc-500 mt-1">Common tasks.</p>
+                <p className="text-[11px] text-zinc-500 mt-1">{t('dashboard.commonTasks')}</p>
                 <div className="space-y-1.5 mt-4">
                   <Link to="/upload" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
                     <Upload className="w-4 h-4 text-zinc-400" />
-                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Upload Sales Report</span>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('dashboard.uploadSalesReport')}</span>
                   </Link>
                   <Link to="/members" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
                     <UserPlus className="w-4 h-4 text-zinc-400" />
-                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Invite Team Member</span>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('dashboard.inviteTeamMember')}</span>
                   </Link>
                   <Link to="/reports" className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
                     <FileXls className="w-4 h-4 text-zinc-400" />
-                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">View All Reports</span>
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t('dashboard.viewAllReports')}</span>
                   </Link>
                 </div>
               </div>
               <p className="border-t border-zinc-100 dark:border-zinc-800 pt-3 mt-4 text-[11px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
                 <Sparkle className="w-3 h-3 text-brand-500 shrink-0 mt-0.5" />
-                Values from tenant-scoped API endpoints.
+                {t('dashboard.apiValuesNote')}
               </p>
             </div>
           </div>
@@ -247,27 +249,27 @@ export function DashboardPage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">Latest Reports</h3>
-                <p className="text-[11px] text-zinc-500 mt-0.5">Most recent uploads.</p>
+                <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{t('dashboard.latestReports')}</h3>
+                <p className="text-[11px] text-zinc-500 mt-0.5">{t('dashboard.mostRecentUploads')}</p>
               </div>
               <Link to="/reports" className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1">
-                View all <ArrowRight className="w-3 h-3" />
+                {t('dashboard.viewAll')} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             {reportsLoading ? (
-              <div className="py-10 text-center text-sm text-zinc-500">Loading reports...</div>
+              <div className="py-10 text-center text-sm text-zinc-500">{t('dashboard.loadingReports')}</div>
             ) : reports.length === 0 ? (
-              <div className="py-10 text-center text-sm text-zinc-500">No reports yet.</div>
+              <div className="py-10 text-center text-sm text-zinc-500">{t('dashboard.noReportsYet')}</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                      <th className="pb-2.5">Report ID</th>
-                      <th className="pb-2.5">Created</th>
-                      <th className="pb-2.5 text-right">Revenue</th>
-                      <th className="pb-2.5 text-right">Orders</th>
+                      <th className="pb-2.5">{t('dashboard.reportId')}</th>
+                      <th className="pb-2.5">{t('dashboard.created')}</th>
+                      <th className="pb-2.5 text-right">{t('dashboard.revenue')}</th>
+                      <th className="pb-2.5 text-right">{t('dashboard.orders')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">

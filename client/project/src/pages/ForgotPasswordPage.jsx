@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { AuthLayout } from '../components/layout/AuthLayout'
 import { supabase } from '../lib/supabase'
 
@@ -12,6 +13,7 @@ const schema = z.object({
 })
 
 export function ForgotPasswordPage() {
+  const { t } = useTranslation()
   const [serverError, setServerError] = useState('')
   const [success, setSuccess] = useState(false)
 
@@ -36,7 +38,7 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Reset your password" subtitle="We'll email you a recovery link">
+    <AuthLayout title={t('auth.resetPassword')} subtitle={t('auth.resetPasswordSubtitle')}>
       {success ? (
         <div className="text-center space-y-4">
           <div className="flex justify-center">
@@ -45,9 +47,9 @@ export function ForgotPasswordPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Email Sent</h3>
+            <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{t('auth.emailSent')}</h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-normal">
-              Please check your inbox for instructions to reset your account password.
+              {t('auth.emailSentMessage')}
             </p>
           </div>
           <div className="pt-2">
@@ -56,7 +58,7 @@ export function ForgotPasswordPage() {
               className="flex items-center justify-center gap-1.5 text-sm text-brand-600 dark:text-brand-400 font-medium hover:underline"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Sign in
+              {t('auth.backToSignIn')}
             </Link>
           </div>
         </div>
@@ -70,7 +72,7 @@ export function ForgotPasswordPage() {
           )}
 
           <div>
-            <label className="label">Email Address</label>
+            <label className="label">{t('auth.emailAddress')}</label>
             <input
               type="email"
               placeholder="you@company.com"
@@ -88,7 +90,7 @@ export function ForgotPasswordPage() {
             disabled={isSubmitting}
             className="btn-primary w-full h-10 mt-2"
           >
-            {isSubmitting ? 'Sending instructions…' : 'Send recovery link'}
+            {isSubmitting ? t('auth.sendingInstructions') : t('auth.sendRecoveryLink')}
           </button>
 
           <p className="mt-4 text-center">
@@ -97,7 +99,7 @@ export function ForgotPasswordPage() {
               className="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Sign in
+              {t('auth.backToSignIn')}
             </Link>
           </p>
         </form>

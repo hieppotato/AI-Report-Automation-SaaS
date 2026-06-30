@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Filter, RefreshCw } from 'lucide-react'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
@@ -10,6 +11,7 @@ import { ErrorState } from '../../components/reports/ErrorState'
 import { useReports, useCreateReport, useDeleteReport } from '../../hooks/useReports'
 
 export function ReportsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { data: reportsResult, isLoading, isError, error, refetch } = useReports()
   const { mutateAsync: createReport } = useCreateReport()
@@ -38,24 +40,24 @@ export function ReportsPage() {
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">AI Generated Reports</h1>
-          <p className="text-sm text-zinc-500 mt-1">Initialize, upload data sheets, and track real-time AI analytics processing.</p>
+          <h1 className="text-2xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">{t('reports.title')}</h1>
+          <p className="text-sm text-zinc-500 mt-1">{t('reports.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => refetch()}
             className="btn-secondary h-10 gap-1.5 cursor-pointer"
-            title="Refresh database records"
+            title={t('reports.refreshTooltip')}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Sync Records
+            {t('reports.syncRecords')}
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
             className="btn-primary h-10 gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Create Report
+            {t('reports.createReport')}
           </button>
         </div>
       </div>
@@ -66,7 +68,7 @@ export function ReportsPage() {
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
-              placeholder="Search reports by title..."
+              placeholder={t('reports.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input pl-10"
@@ -80,12 +82,12 @@ export function ReportsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="input pl-10 cursor-pointer appearance-none bg-none"
             >
-              <option value="All">All Statuses</option>
-              <option value="Draft">Draft</option>
-              <option value="Uploading">Uploading</option>
-              <option value="Processing">Processing</option>
-              <option value="Completed">Completed</option>
-              <option value="Failed">Failed</option>
+              <option value="All">{t('reports.allStatuses')}</option>
+              <option value="Draft">{t('reports.statusDraft')}</option>
+              <option value="Uploading">{t('reports.statusUploading')}</option>
+              <option value="Processing">{t('reports.statusProcessing')}</option>
+              <option value="Completed">{t('reports.statusCompleted')}</option>
+              <option value="Failed">{t('reports.statusFailed')}</option>
             </select>
           </div>
         </div>
@@ -99,15 +101,15 @@ export function ReportsPage() {
         <>
           {reports.length === 0 ? (
             <EmptyState
-              title="No reports yet"
-              description="Upload your first dataset and generate AI insights."
-              actionLabel="Create Report"
+              title={t('reports.noReportsYet')}
+              description={t('reports.noReportsDescription')}
+              actionLabel={t('reports.createReport')}
               onAction={() => setIsModalOpen(true)}
             />
           ) : filtered.length === 0 ? (
             <EmptyState
-              title="No matching reports found"
-              description={`We couldn't find any reports matching "${search}" with status "${statusFilter}".`}
+              title={t('reports.noMatchingReports')}
+              description={t('reports.noMatchingReportsDescription', { search, status: statusFilter })}
             />
           ) : (
             <div className="card p-0 overflow-hidden">

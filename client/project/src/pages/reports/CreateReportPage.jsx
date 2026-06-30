@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Sparkles, Eye } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DashboardLayout } from '../../components/layout/DashboardLayout'
@@ -17,6 +18,7 @@ const metadataSchema = z.object({
 })
 
 export function CreateReportPage() {
+  const { t } = useTranslation()
   const [step, setStep] = useState(1)
   const [createdReportId, setCreatedReportId] = useState(null)
   const [uploadPercent, setUploadPercent] = useState(0)
@@ -81,7 +83,7 @@ export function CreateReportPage() {
           className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-950 dark:hover:text-zinc-50 transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Reports
+          {t('reports.backToReports')}
         </Link>
       </div>
 
@@ -89,19 +91,19 @@ export function CreateReportPage() {
         <div>
           <h1 className="text-xl font-bold text-zinc-950 dark:text-zinc-50 tracking-tight flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-            AI Report Wizard Ingestion
+            {t('reports.wizardTitle')}
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Initialize campaign analytics sheets and track cognitive processing trends.
+            {t('reports.wizardSubtitle')}
           </p>
         </div>
 
         <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-4 text-xs font-semibold">
-          <span className={step === 1 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}>1. Basic Details</span>
+          <span className={step === 1 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}>1. {t('reports.stepBasicDetails')}</span>
           <span className="text-zinc-300 dark:text-zinc-800">/</span>
-          <span className={step === 2 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}>2. Ingest Document</span>
+          <span className={step === 2 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}>2. {t('reports.stepIngestDocument')}</span>
           <span className="text-zinc-300 dark:text-zinc-800">/</span>
-          <span className={step === 3 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}>3. Processing Engine</span>
+          <span className={step === 3 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-400'}>3. {t('reports.stepProcessingEngine')}</span>
         </div>
 
         <div className="space-y-6">
@@ -109,10 +111,10 @@ export function CreateReportPage() {
             <div className="card">
               <form onSubmit={handleSubmit(onMetadataSubmit)} className="space-y-4">
                 <div>
-                  <label className="label">Report Title</label>
+                  <label className="label">{t('reports.reportTitle')}</label>
                   <input
                     type="text"
-                    placeholder="e.g. Q2 Product Margin Summary"
+                    placeholder={t('reports.reportTitlePlaceholder')}
                     className="input"
                     {...register('title')}
                   />
@@ -122,9 +124,9 @@ export function CreateReportPage() {
                 </div>
 
                 <div>
-                  <label className="label">Scope context (Optional)</label>
+                  <label className="label">{t('reports.scopeContext')}</label>
                   <textarea
-                    placeholder="Describe core campaign objectives..."
+                    placeholder={t('reports.scopeContextPlaceholder')}
                     rows={3}
                     className="input resize-none py-2"
                     {...register('description')}
@@ -138,7 +140,7 @@ export function CreateReportPage() {
                     disabled={isSubmitting}
                     className="btn-primary h-10 w-full sm:w-auto cursor-pointer"
                   >
-                    {isSubmitting ? 'Initializing...' : 'Proceed to Upload'}
+                    {isSubmitting ? t('reports.initializing') : t('reports.proceedToUpload')}
                   </button>
                 </div>
               </form>
@@ -148,10 +150,10 @@ export function CreateReportPage() {
           {step === 2 && (
             <div className="space-y-4">
               <div className="card bg-zinc-50/40 dark:bg-zinc-900/10 border-zinc-150 p-4 rounded-xl text-xs space-y-1">
-                <span className="font-mono text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase">Step 2 Scope:</span>
-                <h4 className="font-bold text-zinc-800 dark:text-zinc-200">Ingest transaction worksheet payload</h4>
+                <span className="font-mono text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase">{t('reports.step2Scope')}</span>
+                <h4 className="font-bold text-zinc-800 dark:text-zinc-200">{t('reports.step2Title')}</h4>
                 <p className="text-zinc-500 dark:text-zinc-400 leading-normal">
-                  Dropped files will be parsed instantly. AI will check standard data columns and isolate metrics anomalies automatically.
+                  {t('reports.step2Description')}
                 </p>
               </div>
 
@@ -174,7 +176,7 @@ export function CreateReportPage() {
                     className="btn-primary h-10 gap-1.5 w-full sm:w-auto text-center font-medium"
                   >
                     <Eye className="w-4 h-4" />
-                    Inspect Compiled Analytics
+                    {t('reports.inspectAnalytics')}
                   </Link>
                 </div>
               )}
@@ -185,7 +187,7 @@ export function CreateReportPage() {
                     onClick={() => setStep(2)}
                     className="btn-secondary h-10 cursor-pointer"
                   >
-                    Try Upload Again
+                    {t('reports.tryUploadAgain')}
                   </button>
                 </div>
               )}
